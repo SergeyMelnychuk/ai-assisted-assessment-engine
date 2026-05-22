@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "templateKind": "TARGET_STATE",
+  "notes": "Hand-authored workspace-default binding for the Target State v1 deck (10 slides, engineering-leadership audience). All targets are docx.placeholder tokens — pptx fillers reuse the docx target schema. Each token is laid out so it sits inside a single <a:t> run; the flat-string replace in fillPptxPlaceholders rewrites every occurrence (so tokens reused on multiple slides like {{engagement_client_name}} fill once per token, regardless of slide count). seed: {\"name\":\"Target State\",\"version\":\"v1\",\"kind\":\"TARGET_STATE\"}",
+  "entries": [
+    {
+      "field": "project.name",
+      "target": { "kind": "docx.placeholder", "token": "{{project_name}}" },
+      "format": "auto",
+      "note": "Cover title + capability-map footnote."
+    },
+    {
+      "field": "project.industry",
+      "target": { "kind": "docx.placeholder", "token": "{{project_industry}}" },
+      "format": "auto",
+      "note": "Cover sub-line + capability-map footnote."
+    },
+    {
+      "field": "project.description",
+      "target": { "kind": "docx.placeholder", "token": "{{project_description}}" },
+      "format": "auto",
+      "note": "Current-state context column on slide 2."
+    },
+    {
+      "field": "project.businessGoals",
+      "target": { "kind": "docx.placeholder", "token": "{{project_business_goals}}" },
+      "format": "auto",
+      "note": "Current-state summary side-card on slide 2."
+    },
+    {
+      "field": "project.expectedTimeline",
+      "target": { "kind": "docx.placeholder", "token": "{{project_expected_timeline}}" },
+      "format": "auto",
+      "note": "Current-state summary side-card on slide 2."
+    },
+    {
+      "field": "engagement.name",
+      "target": { "kind": "docx.placeholder", "token": "{{engagement_name}}" },
+      "format": "auto",
+      "note": "Cover engagement label + footers across the deck."
+    },
+    {
+      "field": "engagement.clientName",
+      "target": { "kind": "docx.placeholder", "token": "{{engagement_client_name}}" },
+      "format": "auto",
+      "note": "Cover client name + footers + owner row."
+    },
+    {
+      "field": "totals.scenarioName",
+      "target": { "kind": "docx.placeholder", "token": "{{totals_scenario_name}}" },
+      "format": "auto",
+      "note": "Proposed target state heading + next-step bullet."
+    },
+    {
+      "field": "findings.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{findings_bullet_list}}" },
+      "format": "list",
+      "note": "Findings column on the key-forces slide."
+    },
+    {
+      "field": "risks.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{risks_bullet_list}}" },
+      "format": "list",
+      "note": "Risks column on key-forces + carry-over panel on transition-risks slide."
+    },
+    {
+      "field": "recommendations.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{recommendations_bullet_list}}" },
+      "format": "list",
+      "note": "Recommendations panel on the proposed target state slide."
+    },
+    {
+      "field": "generated.date",
+      "target": { "kind": "docx.placeholder", "token": "{{generated_date}}" },
+      "format": "date",
+      "note": "Cover footer + final-slide footer note."
+    }
+  ]
+}

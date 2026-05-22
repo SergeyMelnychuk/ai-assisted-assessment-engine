@@ -1,0 +1,54 @@
+%% Repository linking (Phase 3 Week 6, ADR-0009 / 0010, revised in
+%% Phase 4 Slice 3 — PAT consolidation).
+%% Shows the end-to-end path when a consultant pastes a GitHub URL +
+%% PAT into an assessment. The PAT lands in the engagement-scoped
+%% AgentCredential vault (not on the RepositoryLink row). The link
+%% just points at the vault entry via agent_credential_id. After the
+%% tarball lands in MinIO, we hand off to the Week 5 archive pipeline
+%% — repo linking doesn't invent a parallel ingest path.
+
+flowchart TD
+    subgraph ui["1. UI"]
+        btn([Link repository button]) --> modal[Modal: URL + PAT inputs]
+        modal --> |"repositoryLink.create"| trpc{{tRPC router}}
+    end
+
+    subgraph encrypt["2. Auth-scoped create (web)"]
+        trpc --> authz[Membership filter<br/>NOT_FOUND over FORBIDDEN]
+        authz --> enc["putAgentCredential()<br/>AES-256-GCM<br/>random 96-bit IV + tag"]
+        enc --> vault[("AgentCredential vault<br/>scope = github.pat<br/>unique on (engagementId, scope)")]
+        vault --> link[("RepositoryLink<br/>agent_credential_id → vault<br/>ingestStatus = PENDING")]
+        trpc --> enqueue{{BullMQ: ingest-repository}}
+    end
+
+    subgraph fetch["3. ingest-repository worker"]
+        enqueue --> lookup["getAgentCredential(<br/>engagementId, github.pat)"]
+        lookup --> vault
+        lookup --> provider["RepoProvider.fetchTarball(link, pat)"]
+        provider --> gh[["GitHub tarball API<br/>GET /repos/:o/:r/tarball/:ref<br/>Authorization: Bearer PAT"]]
+        gh --> |"stream to MinIO<br/>repo-archives/:linkId/:sha.tar.gz"| s3[("MinIO: tarball")]
+        gh --> |"X-GitHub-Repository-Commit-SHA"| link
+    end
+
+    subgraph reuse["4. Hand off to Week 5 archive pipeline"]
+        s3 --> q5{{"BullMQ: ingest-archive<br/>(ADR-0008)"}}
+        q5 --> gates["safety gates + .gitignore +<br/>binary blacklist + 500 KB cap"]
+        gates --> fanout[/per-file ingest-document<br/>language tag in chunkSource/]
+        fanout --> ev[("Evidence rows — 1 per chunk<br/>embedding + chunk_source.language")]
+    end
+
+    subgraph errs["Classified errors (classifier.ts)"]
+        gh -. 401 .-> e1[REPO_AUTH_FAILED]
+        gh -. 404 .-> e2[REPO_NOT_FOUND]
+        gh -. 403 + ratelimit=0 .-> e3[REPO_RATE_LIMITED]
+        gh -. Content-Length > 100 MB .-> e4[REPO_TARBALL_TOO_LARGE]
+    end
+
+    subgraph audit["Audit discipline"]
+        lookup --> scrub["scrubCredential(details)<br/>strips pat/token/ghp_*<br/>before AuditLog.insert"]
+    end
+
+    classDef store fill:#e7eef7,stroke:#4a6590,color:#122033
+    classDef err fill:#f7e7e7,stroke:#9a4040,color:#331212
+    class link,vault,s3,ev store
+    class e1,e2,e3,e4 err

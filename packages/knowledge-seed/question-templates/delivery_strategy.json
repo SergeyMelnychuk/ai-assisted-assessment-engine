@@ -1,0 +1,34 @@
+{
+  "domain": "delivery_strategy",
+  "name": "questions.delivery_strategy.baseline",
+  "description": "Baseline questions for delivery model, team topology, release cadence.",
+  "questions": [
+    {
+      "text": "Which delivery model applies (Scrum, Kanban, Shape Up, waterfall, hybrid)?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Scrum", "Kanban", "Shape Up", "Waterfall", "Hybrid / mixed", "Unsure"],
+      "priority": "HIGH",
+      "rationale": "Delivery model shapes cadence, ceremony cost, and estimation approach."
+    },
+    {
+      "text": "What is the current team topology (stream-aligned, platform, enabling teams)?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Team Topologies mapping reveals cognitive-load and ownership problems early."
+    },
+    {
+      "text": "Are the engineering teams internal, external (vendor), or mixed?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Fully internal", "Mixed", "Primarily vendor / consultancy", "Unsure"],
+      "priority": "MEDIUM",
+      "rationale": "Staffing shape changes the levers we have for effort estimation and team proposals."
+    },
+    {
+      "text": "What is the target sprint or delivery cadence?",
+      "type": "SINGLE_CHOICE",
+      "options": ["1 week", "2 weeks", "3+ weeks", "Continuous / trunk-based"],
+      "priority": "MEDIUM",
+      "rationale": "Cadence affects batch size, risk exposure per release, and on-call burden."
+    }
+  ]
+}

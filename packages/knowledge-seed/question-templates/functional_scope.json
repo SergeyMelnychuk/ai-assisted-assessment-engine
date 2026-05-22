@@ -1,0 +1,31 @@
+{
+  "domain": "functional_scope",
+  "name": "questions.functional_scope.baseline",
+  "description": "Baseline questions for scope of work, feature set, and change boundary.",
+  "questions": [
+    {
+      "text": "What are the core capabilities that MUST ship in the first release?",
+      "type": "FREE_TEXT",
+      "priority": "CRITICAL",
+      "rationale": "MVP scope is the anchor for every effort estimate and roadmap discussion."
+    },
+    {
+      "text": "What is explicitly OUT of scope for this engagement?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Written-down exclusions prevent scope creep during review and SOW negotiation."
+    },
+    {
+      "text": "Are there existing workflows or UI patterns that must be preserved exactly?",
+      "type": "FREE_TEXT",
+      "priority": "MEDIUM",
+      "rationale": "Preservation constraints cap redesign options and drive UX migration cost."
+    },
+    {
+      "text": "What user personas interact with the system, and what are their primary jobs-to-be-done?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Persona catalog guides functional decomposition and authorization modelling."
+    }
+  ]
+}

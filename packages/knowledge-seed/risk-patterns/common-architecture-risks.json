@@ -1,0 +1,157 @@
+{
+  "name": "Common Architecture Risk Patterns",
+  "description": "Reusable risk patterns frequently identified in architecture assessments",
+  "version": 1,
+  "patterns": [
+    {
+      "id": "risk-arch-001",
+      "title": "Monolithic architecture scaling limitations",
+      "domain": "architecture",
+      "triggerConditions": ["architecture_style == monolith", "expected_growth > moderate"],
+      "riskTemplate": {
+        "title": "Scalability constraints due to monolithic architecture",
+        "category": "Architecture",
+        "description": "The current monolithic architecture may not support expected growth in users/transactions and desired deployment frequency without significant refactoring.",
+        "impact": "HIGH",
+        "likelihood": "LIKELY",
+        "mitigationProposal": "Consider a phased decomposition strategy starting with the highest-traffic or most-changed modules. Begin with identifying bounded contexts and extracting services incrementally."
+      },
+      "confidenceBase": 0.7
+    },
+    {
+      "id": "risk-arch-002",
+      "title": "Single point of failure in data layer",
+      "domain": "architecture",
+      "triggerConditions": ["single_database == true", "availability_requirement >= high"],
+      "riskTemplate": {
+        "title": "Single point of failure in database layer",
+        "category": "Reliability",
+        "description": "Reliance on a single database instance without replication or failover creates a single point of failure that risks service outage.",
+        "impact": "CRITICAL",
+        "likelihood": "POSSIBLE",
+        "mitigationProposal": "Implement database replication with automatic failover. Consider read replicas for read-heavy workloads. Evaluate multi-region options for disaster recovery."
+      },
+      "confidenceBase": 0.8
+    },
+    {
+      "id": "risk-arch-003",
+      "title": "Tight coupling between services",
+      "domain": "architecture",
+      "triggerConditions": ["synchronous_communication == primary", "service_count > 5"],
+      "riskTemplate": {
+        "title": "Cascade failure risk due to tight service coupling",
+        "category": "Reliability",
+        "description": "Heavy reliance on synchronous inter-service communication creates cascade failure risk and makes independent deployment difficult.",
+        "impact": "HIGH",
+        "likelihood": "LIKELY",
+        "mitigationProposal": "Introduce asynchronous communication patterns (event-driven, message queues) for non-critical paths. Implement circuit breakers and bulkheads for synchronous calls."
+      },
+      "confidenceBase": 0.7
+    },
+    {
+      "id": "risk-arch-004",
+      "title": "No API versioning strategy",
+      "domain": "integrations_apis",
+      "triggerConditions": ["api_versioning == none", "external_consumers > 0"],
+      "riskTemplate": {
+        "title": "Breaking changes risk without API versioning",
+        "category": "Integration",
+        "description": "Lack of API versioning strategy means any API change risks breaking external consumers, creating upgrade coordination challenges.",
+        "impact": "HIGH",
+        "likelihood": "LIKELY",
+        "mitigationProposal": "Implement API versioning strategy (URL path or header-based). Establish deprecation policy. Document breaking vs non-breaking change criteria."
+      },
+      "confidenceBase": 0.8
+    },
+    {
+      "id": "risk-arch-005",
+      "title": "Missing observability",
+      "domain": "observability",
+      "triggerConditions": ["monitoring_coverage < basic"],
+      "riskTemplate": {
+        "title": "Operational blind spots due to insufficient observability",
+        "category": "Operations",
+        "description": "Insufficient monitoring, logging, and alerting means production issues may go undetected or be difficult to diagnose, increasing MTTR.",
+        "impact": "HIGH",
+        "likelihood": "LIKELY",
+        "mitigationProposal": "Implement structured logging, key business and technical metrics, distributed tracing, and alerting on SLO violations. Start with the most critical user-facing paths."
+      },
+      "confidenceBase": 0.8
+    },
+    {
+      "id": "risk-sec-001",
+      "title": "Inadequate authentication/authorization",
+      "domain": "security_iam",
+      "triggerConditions": ["auth_model < standard"],
+      "riskTemplate": {
+        "title": "Security vulnerability due to inadequate access controls",
+        "category": "Security",
+        "description": "Insufficient authentication and authorization controls expose the system to unauthorized access and potential data breaches.",
+        "impact": "CRITICAL",
+        "likelihood": "POSSIBLE",
+        "mitigationProposal": "Implement industry-standard authentication (OAuth 2.0 / OIDC). Apply principle of least privilege for authorization. Conduct security review of all API endpoints."
+      },
+      "confidenceBase": 0.7
+    },
+    {
+      "id": "risk-ops-001",
+      "title": "No disaster recovery plan",
+      "domain": "cloud_infrastructure",
+      "triggerConditions": ["dr_plan == none", "business_criticality >= medium"],
+      "riskTemplate": {
+        "title": "Business continuity risk without disaster recovery plan",
+        "category": "Operations",
+        "description": "Absence of a documented and tested disaster recovery plan means the organization cannot reliably recover from major incidents.",
+        "impact": "CRITICAL",
+        "likelihood": "UNLIKELY",
+        "mitigationProposal": "Define RPO/RTO targets. Implement backup strategy with tested restore procedures. Consider multi-region deployment for critical services. Document and regularly test the DR plan."
+      },
+      "confidenceBase": 0.8
+    },
+    {
+      "id": "risk-dev-001",
+      "title": "Manual deployment process",
+      "domain": "devops_cicd",
+      "triggerConditions": ["deployment_automation < basic"],
+      "riskTemplate": {
+        "title": "Deployment risk and slow delivery due to manual process",
+        "category": "Delivery",
+        "description": "Manual deployment processes increase the risk of human error, slow down release cycles, and make rollbacks difficult.",
+        "impact": "MEDIUM",
+        "likelihood": "VERY_LIKELY",
+        "mitigationProposal": "Implement CI/CD pipeline with automated build, test, and deployment stages. Start with the most critical service and expand coverage incrementally."
+      },
+      "confidenceBase": 0.9
+    },
+    {
+      "id": "risk-test-001",
+      "title": "Insufficient test coverage",
+      "domain": "devops_cicd",
+      "triggerConditions": ["test_coverage < moderate"],
+      "riskTemplate": {
+        "title": "Regression risk due to insufficient test coverage",
+        "category": "Quality",
+        "description": "Low test coverage increases the risk of undetected regressions when making changes, reducing confidence in releases.",
+        "impact": "HIGH",
+        "likelihood": "LIKELY",
+        "mitigationProposal": "Establish minimum test coverage targets. Prioritize testing of critical business flows. Implement test gates in CI pipeline to prevent coverage regression."
+      },
+      "confidenceBase": 0.7
+    },
+    {
+      "id": "risk-data-001",
+      "title": "No data backup strategy",
+      "domain": "cloud_infrastructure",
+      "triggerConditions": ["backup_strategy == none"],
+      "riskTemplate": {
+        "title": "Data loss risk without backup strategy",
+        "category": "Data",
+        "description": "Absence of automated backup and restore procedures creates risk of irrecoverable data loss in case of failure or human error.",
+        "impact": "CRITICAL",
+        "likelihood": "POSSIBLE",
+        "mitigationProposal": "Implement automated backup with defined retention policy. Test restore procedures regularly. Consider point-in-time recovery capability."
+      },
+      "confidenceBase": 0.9
+    }
+  ]
+}

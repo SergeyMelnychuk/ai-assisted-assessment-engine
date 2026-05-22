@@ -1,0 +1,35 @@
+%% Mermaid C4 container view — Assessment Co-Pilot
+%% Shows runtime containers, external systems, and the protocols
+%% between them. Paste into mermaid.live for a rendered view.
+
+C4Container
+    title Container View — Assessment Co-Pilot
+
+    Person(user, "Users", "Consultant, Reviewer, Admin")
+    System_Ext(claude, "Anthropic Claude", "Primary LLM — multi-provider router (ADR-0015)")
+    System_Ext(openai, "OpenAI", "Embeddings (text-embedding-3-small — ADR-0003)")
+    System_Ext(github, "GitHub", "Repo tarballs via PAT (ADR-0010)")
+
+    System_Boundary(copilot, "Assessment Co-Pilot") {
+        Container(web, "Next.js Web App", "Next.js 15 / TypeScript", "SSR pages, tRPC API, REST endpoints for upload/download/export, NextAuth credentials auth. Hosts the Evidence Explorer + workflow-step popups as routes.")
+        Container(worker, "BullMQ Worker", "Node.js 20 / tsx", "Long-running consumer of the document-processing queue, concurrency 5. All AI-heavy jobs run here (ingest, analysis, estimation, deliverables, agent harness).")
+        ContainerDb(pg, "PostgreSQL", "Postgres 16 + pgvector", "Durable state: engagements, assessments, evidence (with embedding + tsvector for hybrid retrieval), findings, deliverables, agent runs, AuditLog ledger, DB-backed feature flags.")
+        ContainerDb(redis, "Redis", "Redis 7", "BullMQ job transport only — not a generic cache. One queue, 11 job types.")
+        ContainerDb(minio, "MinIO", "S3 API", "Uploaded documents, archive children, repo tarballs, template shells + populated fills.")
+        Container(plantuml, "PlantUML Server", "Jetty", "Optional — renders PlantUML source to SVG/PNG. Not on the happy path.")
+    }
+
+    Rel(user, web, "HTTPS", "UI + tRPC + REST")
+    Rel(web, pg, "Prisma client", "TCP 5432")
+    Rel(web, redis, "Enqueue", "TCP 6379")
+    Rel(web, minio, "Upload / proxy-download", "HTTP 9000")
+    Rel(web, claude, "Question follow-ups + agent-trigger AI", "HTTPS")
+    Rel(worker, redis, "Dequeue + ack", "TCP 6379")
+    Rel(worker, pg, "Prisma client", "TCP 5432")
+    Rel(worker, minio, "Read uploads, write fills + tarballs", "HTTP 9000")
+    Rel(worker, claude, "Analysis / planner / deliverable / agent calls (router)", "HTTPS")
+    Rel(worker, openai, "Embed evidence chunks + queries", "HTTPS")
+    Rel(worker, github, "Fetch repo tarballs (PAT-authed)", "HTTPS")
+    Rel(worker, plantuml, "(optional) render PlantUML", "HTTP 8081")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="2")

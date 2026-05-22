@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "templateKind": "EXECUTIVE_SUMMARY",
+  "notes": "Hand-authored workspace-default binding for the Executive Summary v1 deck. Seven sponsor-facing slides: cover, headline findings, top risks, recommendations, effort/cost summary, engagement context, next steps. Each entry maps a single engine-output field to a {{token}} that appears verbatim in one <a:t> run inside the slide XML — the filler does a flat string replace, so split runs would silently miss. seed: {\"name\":\"Executive Summary\",\"version\":\"v1\",\"kind\":\"EXECUTIVE_SUMMARY\"}",
+  "entries": [
+    {
+      "field": "project.name",
+      "target": { "kind": "docx.placeholder", "token": "{{project_name}}" },
+      "format": "auto",
+      "note": "Cover slide hero + engagement-context slide row."
+    },
+    {
+      "field": "project.industry",
+      "target": { "kind": "docx.placeholder", "token": "{{project_industry}}" },
+      "format": "auto",
+      "note": "Sub-title on the cover; right column on the context slide."
+    },
+    {
+      "field": "engagement.clientName",
+      "target": { "kind": "docx.placeholder", "token": "{{client_name}}" },
+      "format": "auto",
+      "note": "Cover prepared-for block, context slide, next-steps footer."
+    },
+    {
+      "field": "engagement.name",
+      "target": { "kind": "docx.placeholder", "token": "{{engagement_name}}" },
+      "format": "auto",
+      "note": "Cover engagement block + context slide."
+    },
+    {
+      "field": "totals.scenarioName",
+      "target": { "kind": "docx.placeholder", "token": "{{scenario_name}}" },
+      "format": "auto",
+      "note": "Effort & cost slide header; repeated on context slide."
+    },
+    {
+      "field": "totals.effortHoursLow",
+      "target": { "kind": "docx.placeholder", "token": "{{effort_hours_low}}" },
+      "format": "auto",
+      "note": "Effort hours (low) stat card."
+    },
+    {
+      "field": "totals.effortHoursHigh",
+      "target": { "kind": "docx.placeholder", "token": "{{effort_hours_high}}" },
+      "format": "auto",
+      "note": "Effort hours (high) stat card."
+    },
+    {
+      "field": "totals.costLow",
+      "target": { "kind": "docx.placeholder", "token": "{{cost_low}}" },
+      "format": "currency",
+      "note": "Cost (low) stat card — formatted with two decimals."
+    },
+    {
+      "field": "totals.costHigh",
+      "target": { "kind": "docx.placeholder", "token": "{{cost_high}}" },
+      "format": "currency",
+      "note": "Cost (high) stat card."
+    },
+    {
+      "field": "totals.confidence",
+      "target": { "kind": "docx.placeholder", "token": "{{confidence}}" },
+      "format": "percent",
+      "note": "Confidence as a percentage on effort/cost + context slides."
+    },
+    {
+      "field": "totals.currency",
+      "target": { "kind": "docx.placeholder", "token": "{{currency}}" },
+      "format": "auto",
+      "note": "Currency code printed alongside the cost stats."
+    },
+    {
+      "field": "findings.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{findings_bullet_list}}" },
+      "format": "list",
+      "note": "Pre-formatted '- [severity/domain] title' bullet list from the engine."
+    },
+    {
+      "field": "risks.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{risks_bullet_list}}" },
+      "format": "list",
+      "note": "Top risks bullet list."
+    },
+    {
+      "field": "recommendations.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{recommendations_bullet_list}}" },
+      "format": "list",
+      "note": "Priority recommendations bullet list."
+    },
+    {
+      "field": "generated.date",
+      "target": { "kind": "docx.placeholder", "token": "{{generated_date}}" },
+      "format": "date",
+      "note": "ISO date in cover, every footer, and the closing slide."
+    }
+  ]
+}

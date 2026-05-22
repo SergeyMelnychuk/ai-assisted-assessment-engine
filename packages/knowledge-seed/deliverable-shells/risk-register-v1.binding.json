@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "templateKind": "RISK_REGISTER",
+  "notes": "Hand-authored workspace-default binding for the Risk Register v1 workbook. seed: {\"name\":\"Risk Register\",\"version\":\"v1\",\"kind\":\"RISK_REGISTER\"}. Cover-sheet cells carrying the literal «bind» token and the yellow fill are filled by the engine; everything else is left blank for human authorship. Per-row Risk fields on the 'Risks' sheet (Title, Category, Severity, Likelihood, Description, Mitigation, Owner, Status) are intentionally NOT bound: the engine today exposes only `risks.bulletList` (no per-risk structured fields), so we surface the full bullet list in a single cell on the Cover labelled 'All risks (engine output)' and leave the structured table for the reviewer to fill. Best practice is to be honest about what the AI can and cannot fill — pretending to populate columns the engine has no source for would mislead the human reviewer.",
+  "entries": [
+    {
+      "field": "project.name",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B4" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Project name."
+    },
+    {
+      "field": "project.industry",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B5" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Industry."
+    },
+    {
+      "field": "engagement.clientName",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B6" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Client."
+    },
+    {
+      "field": "engagement.name",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B7" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Engagement."
+    },
+    {
+      "field": "totals.scenarioName",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B8" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Scenario."
+    },
+    {
+      "field": "generated.date",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B9" },
+      "format": "date",
+      "note": "Cover > Project metadata > Generated date."
+    },
+    {
+      "field": "assessment.risksCount",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B12" },
+      "format": "auto",
+      "note": "Cover > Totals > Risks identified count."
+    },
+    {
+      "field": "risks.bulletList",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "A15" },
+      "format": "auto",
+      "note": "Cover > All risks (engine output) — single merged cell holding the engine's full bullet list. Per-row Risk fields on the Risks sheet are deliberately unbound (see top-level notes)."
+    }
+  ]
+}

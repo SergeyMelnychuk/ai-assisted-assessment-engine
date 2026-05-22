@@ -1,0 +1,1485 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth & Users ──────────────────────────────────────────────
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String
+  passwordHash   String   @map("password_hash")
+  role           UserRole @default(ASSESSOR)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  engagementMembers   EngagementMember[]
+  answers             Answer[]
+  reviews             Review[]
+  documents           Document[]
+  auditLogs           AuditLog[]
+  templatesUploaded   Template[] @relation("TemplateUploader")
+  templatesApproved   Template[] @relation("TemplateApprover")
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  ASSESSOR
+  REVIEWER
+  VIEWER
+}
+
+// ─── Engagement ────────────────────────────────────────────────
+
+model Engagement {
+  id         String           @id @default(cuid())
+  name       String
+  clientName String           @map("client_name")
+  industry   String?
+  status     EngagementStatus @default(DRAFT)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  members           EngagementMember[]
+  assessments       Assessment[]
+  agentRuns         AgentRun[]
+  agentCredentials  AgentCredential[]
+  templates         Template[]
+
+  @@map("engagements")
+}
+
+enum EngagementStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+model EngagementMember {
+  id           String         @id @default(cuid())
+  engagementId String         @map("engagement_id")
+  userId       String         @map("user_id")
+  role         EngagementRole @default(CONTRIBUTOR)
+
+  engagement Engagement @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([engagementId, userId])
+  @@map("engagement_members")
+}
+
+enum EngagementRole {
+  OWNER
+  CONTRIBUTOR
+  REVIEWER
+  VIEWER
+}
+
+// ─── Assessment ────────────────────────────────────────────────
+
+model Assessment {
+  id               String          @id @default(cuid())
+  engagementId     String          @map("engagement_id")
+  assessmentTypeId String          @map("assessment_type_id")
+  mode             AssessmentMode
+  evidenceMode     EvidenceMode    @default(MANUAL) @map("evidence_mode")
+  status           AssessmentStage @default(SETUP)
+  activeDomains    String[]        @map("active_domains")
+  overallConfidence Float?         @map("overall_confidence")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  // Soft-archive: `archivedAt` null ⇒ active, non-null ⇒ archived.
+  // Archived assessments are hidden from default lists and must be
+  // archived before they can be hard-deleted. `archivedById` stores
+  // the acting user's id as a string (no FK) — the AuditLog row
+  // created alongside the transition is the authoritative relation.
+  archivedAt       DateTime?       @map("archived_at")
+  archivedById     String?         @map("archived_by_id")
+
+  engagement     Engagement     @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  assessmentType AssessmentType @relation(fields: [assessmentTypeId], references: [id])
+
+  projectContext  ProjectContext?
+  documents       Document[]
+  evidences       Evidence[]
+  evidenceSources EvidenceSource[]
+  questions       Question[]
+  domainScores    DomainScore[]
+  findings        Finding[]
+  risks           Risk[]
+  recommendations Recommendation[]
+  assumptions     Assumption[]
+  roleProposals   RoleProposal[]
+  estimates       Estimate[]
+  deliverables    Deliverable[]
+  diagrams        Diagram[]
+
+  deliveryStrategyAssessment       DeliveryStrategyAssessment?
+  testStrategyAssessment           TestStrategyAssessment?
+  dataDistributionAssessment       DataDistributionAssessment?
+  storageAssessment                StorageAssessment?
+  infrastructureMaturityAssessment InfrastructureMaturityAssessment?
+
+  repositoryLinks RepositoryLink[]
+  agentRuns       AgentRun[]
+  templateFills   TemplateFill[]
+
+  @@map("assessments")
+}
+
+enum EvidenceMode {
+  MANUAL
+  AGENTIC
+}
+
+enum AssessmentMode {
+  EXISTING_SYSTEM
+  GREENFIELD
+  MODERNIZATION
+  AUDIT
+  PRE_IMPLEMENTATION
+}
+
+enum AssessmentStage {
+  SETUP
+  INTAKE
+  QUESTIONING
+  ANALYSIS
+  DRAFTING
+  REVIEW
+  COMPLETED
+}
+
+model AssessmentType {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  description    String
+  defaultDomains String[] @map("default_domains")
+  defaultMode    AssessmentMode @map("default_mode")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  assessments Assessment[]
+
+  @@map("assessment_types")
+}
+
+// ─── Project Context ───────────────────────────────────────────
+
+model ProjectContext {
+  id                     String   @id @default(cuid())
+  assessmentId           String   @unique @map("assessment_id")
+  projectName            String?  @map("project_name")
+  description            String?
+  industry               String?
+  cloudProviders         String[] @map("cloud_providers")
+  platforms              String[] @map("platforms")
+  knownConstraints       String?  @map("known_constraints")
+  businessGoals          String?  @map("business_goals")
+  expectedTimeline       String?  @map("expected_timeline")
+  budgetSensitivity      BudgetSensitivity? @map("budget_sensitivity")
+  targetDeliveryModel    String?  @map("target_delivery_model")
+  estimatedUsers         String?  @map("estimated_users")
+  complianceRequirements String[] @map("compliance_requirements")
+  existingTeamSummary    String?  @map("existing_team_summary")
+  isGreenfield           Boolean  @default(false) @map("is_greenfield")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("project_contexts")
+}
+
+enum BudgetSensitivity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// ─── Documents & Evidence ──────────────────────────────────────
+
+model Document {
+  id               String           @id @default(cuid())
+  assessmentId     String           @map("assessment_id")
+  filename         String
+  mimeType         String           @map("mime_type")
+  storagePath      String           @map("storage_path")
+  fileSize         Int              @map("file_size")
+  uploadType       DocumentType     @map("upload_type")
+  // `ingestStatus` tracks the deterministic pipeline (download → extract
+  // → chunk → (embed, Week 3) → READY). AI analysis lives on the
+  // per-assessment `run-analysis` job now; this column has no AI state.
+  // See ADR-0001.
+  ingestStatus     IngestStatus     @default(PENDING) @map("ingest_status")
+  // `processingStatus` is kept for backwards-compat with existing audit
+  // rows and retry surfaces. New writers should prefer `ingestStatus`;
+  // the two are kept in sync by the ingest worker during the transition.
+  processingStatus ProcessingStatus @default(PENDING) @map("processing_status")
+  extractedText    String?          @map("extracted_text")
+  extractedSummary String?          @map("extracted_summary")
+  chunkCount       Int?             @map("chunk_count")
+  uploadedById     String           @map("uploaded_by_id")
+  // Archive fan-out (Week 5, ADR-0008). Null on plain uploads; set
+  // on children extracted from an archive. The parent itself stays
+  // with `parent_document_id = NULL` and is surfaced to the UI as an
+  // "archive" purely via the presence of child rows.
+  parentDocumentId String?          @map("parent_document_id")
+  // Optional domain tag the user picked at upload time. When set,
+  // the ingest worker stamps every chunk of this document with this
+  // domain instead of the default `"ingested"` catch-all bucket.
+  // NULL = use the catch-all (back-compat with existing rows).
+  domain           String?          @map("domain")
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  uploadedBy User       @relation(fields: [uploadedById], references: [id])
+  evidences  Evidence[]
+  diagrams   Diagram[]
+
+  parentDocument Document?  @relation("DocumentArchive", fields: [parentDocumentId], references: [id], onDelete: Cascade)
+  childDocuments Document[] @relation("DocumentArchive")
+
+  // Week 6 (ADR-0009/0010): repository links whose tarball is persisted
+  // under this Document as the archive parent. `onDelete: SET NULL` is
+  // set in the 20260420 migration; mirrored here so Prisma's drift check
+  // passes.
+  repositoryLinks RepositoryLink[] @relation("RepoLinkParentDocument")
+  templateFills   TemplateFill[]   @relation("TemplateFillOutput")
+
+  @@index([parentDocumentId])
+  @@map("documents")
+}
+
+enum DocumentType {
+  RFP
+  ARCHITECTURE_DOC
+  NFR_DOC
+  BACKLOG
+  API_SPEC
+  DIAGRAM_STRUCTURIZR
+  DIAGRAM_MERMAID
+  DIAGRAM_PLANTUML
+  DIAGRAM_WEBSEQUENCE
+  DIAGRAM_IMAGE
+  DIAGRAM_SVG
+  DIAGRAM_OTHER
+  MEETING_NOTES
+  INCIDENT_SUMMARY
+  SECURITY_DOC
+  OPERATIONAL_MANUAL
+  MIGRATION_NOTES
+  PROPOSAL
+  OTHER
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+// Ingest pipeline state for a Document. Distinct from AI analysis —
+// the per-assessment `run-analysis` job owns that. `EMBEDDED` is
+// reserved for Week 3 (embedding foundation) and MUST NOT be written
+// by the Week 1 ingest worker.
+enum IngestStatus {
+  PENDING
+  EXTRACTING
+  CHUNKED
+  EMBEDDED
+  READY
+  FAILED
+}
+
+// ─── Diagrams (parsed + generated) ────────────────────────────
+
+model Diagram {
+  id               String            @id @default(cuid())
+  assessmentId     String            @map("assessment_id")
+  documentId       String?           @map("document_id")
+  deliverableId    String?           @map("deliverable_id")
+  direction        DiagramDirection  @default(INGESTED)
+  diagramFormat    DiagramFormat     @map("diagram_format")
+  title            String
+  description      String?
+  sourceCode       String?           @map("source_code")         // text-based diagram source (mermaid, plantuml, structurizr DSL, wsd)
+  imageStoragePath String?           @map("image_storage_path")  // S3 path for rendered image or uploaded image
+  svgContent       String?           @map("svg_content")         // inline SVG if available
+  extractedEntities Json?            @map("extracted_entities")  // components, services, connections, layers parsed from diagram
+  extractedSummary String?           @map("extracted_summary")   // AI-generated description of what the diagram shows
+  diagramType      DiagramContentType? @map("diagram_type")      // what the diagram represents
+  processingStatus ProcessingStatus  @default(PENDING) @map("processing_status")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  assessment  Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  document    Document?    @relation(fields: [documentId], references: [id])
+  deliverable Deliverable? @relation(fields: [deliverableId], references: [id])
+
+  @@map("diagrams")
+}
+
+enum DiagramDirection {
+  INGESTED    // parsed from uploaded input
+  GENERATED   // produced by the system as deliverable output
+}
+
+enum DiagramFormat {
+  STRUCTURIZR
+  MERMAID
+  PLANTUML
+  WEBSEQUENCEDIAGRAMS
+  PNG
+  SVG
+  JPEG
+  DRAW_IO
+  OTHER
+}
+
+enum DiagramContentType {
+  SYSTEM_CONTEXT
+  CONTAINER
+  COMPONENT
+  DEPLOYMENT
+  SEQUENCE
+  DATA_FLOW
+  NETWORK_TOPOLOGY
+  ER_DIAGRAM
+  STATE_MACHINE
+  ACTIVITY_FLOW
+  INFRASTRUCTURE
+  OTHER
+}
+
+model Evidence {
+  id           String         @id @default(cuid())
+  assessmentId String         @map("assessment_id")
+  sourceType   EvidenceSourceType @map("source_type")
+  documentId   String?        @map("document_id")
+  answerId     String?        @map("answer_id")
+  content      String
+  domain       String
+  confidence   Float          @default(0.5)
+  // Week 3 (ADR-0003/0004/0005): embedding foundation. All four columns
+  // are nullable so the backfill script can catch up incrementally;
+  // new rows written by the Week 3 ingest worker always populate them.
+  // `embedding` is `Unsupported("vector(1536)")` — Prisma can't type
+  // pgvector's column type, so reads/writes go through raw SQL.
+  embedding     Unsupported("vector(1536)")?
+  // ADR-0027: lexical search backbone. Stored generated column —
+  // Postgres maintains it from `content` automatically. Prisma can't
+  // type tsvector so reads/writes go through raw SQL in the retriever.
+  searchVec     Unsupported("tsvector")?    @map("search_vec")
+  chunkIndex    Int?        @map("chunk_index")
+  chunkSource   Json?       @map("chunk_source")
+  contentSha    String?     @map("content_sha")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  document   Document?  @relation(fields: [documentId], references: [id])
+  answer     Answer?    @relation(fields: [answerId], references: [id])
+
+  @@index([contentSha])
+  @@map("evidences")
+}
+
+enum EvidenceSourceType {
+  DOCUMENT
+  ANSWER
+  ARTIFACT
+  CONNECTOR
+}
+
+model EvidenceSource {
+  id               String                 @id @default(cuid())
+  assessmentId     String                 @map("assessment_id")
+  sourceType       ConnectorType          @map("source_type")
+  connectionStatus ConnectionStatus       @default(PENDING_APPROVAL) @map("connection_status")
+  connectionConfig Json?                  @map("connection_config")
+  approvedById     String?                @map("approved_by_id")
+  approvedAt       DateTime?              @map("approved_at")
+  createdAt        DateTime               @default(now()) @map("created_at")
+
+  assessment          Assessment           @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  artifactValidations ArtifactValidation[]
+
+  @@map("evidence_sources")
+}
+
+enum ConnectorType {
+  REPOSITORY
+  IAC_REPO
+  CICD
+  CLOUD_CONFIG
+  K8S
+  MONITORING
+  TEST_REPORT
+  DATABASE_SCHEMA
+  BACKLOG_SYSTEM
+  DOCUMENTATION
+}
+
+enum ConnectionStatus {
+  PENDING_APPROVAL
+  CONNECTED
+  FAILED
+  DISCONNECTED
+}
+
+model ArtifactValidation {
+  id               String           @id @default(cuid())
+  assessmentId     String           @map("assessment_id")
+  evidenceSourceId String           @map("evidence_source_id")
+  claimText        String           @map("claim_text")
+  artifactFinding  String           @map("artifact_finding")
+  status           ValidationStatus
+  notes            String?
+  createdAt        DateTime         @default(now()) @map("created_at")
+
+  evidenceSource EvidenceSource @relation(fields: [evidenceSourceId], references: [id], onDelete: Cascade)
+
+  @@map("artifact_validations")
+}
+
+enum ValidationStatus {
+  CONFIRMED
+  CONTRADICTED
+  PARTIALLY_CONFIRMED
+  INCONCLUSIVE
+}
+
+// ─── Questions & Answers ───────────────────────────────────────
+
+model Question {
+  id            String         @id @default(cuid())
+  assessmentId  String         @map("assessment_id")
+  domain        String
+  questionText  String         @map("question_text")
+  questionType  QuestionType   @map("question_type")
+  options       Json?
+  priority      Priority       @default(MEDIUM)
+  dependsOn     String[]       @map("depends_on")
+  isAnswered    Boolean        @default(false) @map("is_answered")
+  generatedBy   GeneratedBy    @default(AI) @map("generated_by")
+  rationale     String?
+  stage         QuestionStage  @default(INTAKE)
+  orderIndex    Int            @default(0) @map("order_index")
+  createdAt     DateTime       @default(now()) @map("created_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  answers    Answer[]
+
+  @@map("questions")
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTI_CHOICE
+  FREE_TEXT
+  NUMERIC
+  FILE_UPLOAD
+  CONFIRMATION
+}
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum GeneratedBy {
+  AI
+  TEMPLATE
+  MANUAL
+}
+
+enum QuestionStage {
+  INTAKE
+  FOLLOW_UP
+  CLARIFICATION
+  EVIDENCE_REQUEST
+}
+
+model Answer {
+  id             String   @id @default(cuid())
+  questionId     String   @map("question_id")
+  answerText     String?  @map("answer_text")
+  answerData     Json?    @map("answer_data")
+  answeredById   String   @map("answered_by_id")
+  confidenceNote String?  @map("confidence_note")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answeredBy User       @relation(fields: [answeredById], references: [id])
+  evidences  Evidence[]
+
+  @@map("answers")
+}
+
+// ─── Scoring ───────────────────────────────────────────────────
+
+model DomainScore {
+  id              String       @id @default(cuid())
+  assessmentId    String       @map("assessment_id")
+  domain          String
+  score           Float
+  maturityLevel   MaturityLevel @map("maturity_level")
+  confidence      Float        @default(0.5)
+  scoringRationale String?     @map("scoring_rationale")
+  // Week 7 (ADR-0011): the full set of Evidence chunks the retriever
+  // gave the scoring prompt. `evidenceIds` on Finding/Risk/Rec reflects
+  // what the model cited; this is what it *had*. Additive, defaults to
+  // an empty array so pre-W7 rows stay valid.
+  retrievedEvidenceIds String[] @default([]) @map("retrieved_evidence_ids")
+  reviewStatus    ReviewStatus @default(DRAFT) @map("review_status")
+  reviewedById    String?      @map("reviewed_by_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, domain])
+  @@map("domain_scores")
+}
+
+enum MaturityLevel {
+  AD_HOC
+  INITIAL
+  DEFINED
+  MANAGED
+  OPTIMIZED
+}
+
+// ─── Findings, Risks, Recommendations ─────────────────────────
+
+model Finding {
+  id           String       @id @default(cuid())
+  assessmentId String       @map("assessment_id")
+  domain       String
+  findingType  FindingType  @map("finding_type")
+  title        String
+  description  String
+  evidenceIds  String[]     @map("evidence_ids")
+  // Week 7 (ADR-0011): full retriever output that bounded the model's
+  // choice. Superset of `evidenceIds`.
+  retrievedEvidenceIds String[] @default([]) @map("retrieved_evidence_ids")
+  confidence   Float        @default(0.5)
+  severity     Severity     @default(MEDIUM)
+  reviewStatus ReviewStatus @default(DRAFT) @map("review_status")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("findings")
+}
+
+enum FindingType {
+  STRENGTH
+  WEAKNESS
+  GAP
+  OBSERVATION
+  OPPORTUNITY
+}
+
+model Risk {
+  id                 String       @id @default(cuid())
+  assessmentId       String       @map("assessment_id")
+  title              String
+  category           String
+  description        String
+  evidenceIds        String[]     @map("evidence_ids")
+  // Week 7 (ADR-0011): full retriever output that bounded the model's choice.
+  retrievedEvidenceIds String[]  @default([]) @map("retrieved_evidence_ids")
+  impact             Severity
+  likelihood         Likelihood
+  severity           Severity
+  mitigationProposal String?      @map("mitigation_proposal")
+  ownerSuggestion    String?      @map("owner_suggestion")
+  confidence         Float        @default(0.5)
+  reviewStatus       ReviewStatus @default(DRAFT) @map("review_status")
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("risks")
+}
+
+enum Likelihood {
+  VERY_LIKELY
+  LIKELY
+  POSSIBLE
+  UNLIKELY
+}
+
+model Recommendation {
+  id               String       @id @default(cuid())
+  assessmentId     String       @map("assessment_id")
+  domain           String
+  title            String
+  description      String
+  priority         Priority     @default(MEDIUM)
+  effortIndication String?      @map("effort_indication")
+  evidenceIds      String[]     @map("evidence_ids")
+  // Week 7 (ADR-0011): full retriever output that bounded the model's choice.
+  // For Recommendation we take the union of the originating finding's
+  // retrieved set so the reviewer can trace a rec back through its
+  // finding to the chunks both had in context.
+  retrievedEvidenceIds String[] @default([]) @map("retrieved_evidence_ids")
+  relatedRiskIds   String[]     @map("related_risk_ids")
+  confidence       Float        @default(0.5)
+  reviewStatus     ReviewStatus @default(DRAFT) @map("review_status")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("recommendations")
+}
+
+model Assumption {
+  id                 String          @id @default(cuid())
+  assessmentId       String          @map("assessment_id")
+  assumptionText     String          @map("assumption_text")
+  impactIfWrong      String?         @map("impact_if_wrong")
+  source             AssumptionSource
+  confidence         Float           @default(0.5)
+  requiresValidation Boolean         @default(true) @map("requires_validation")
+  createdAt          DateTime        @default(now()) @map("created_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("assumptions")
+}
+
+enum AssumptionSource {
+  AI_INFERRED
+  STAKEHOLDER_STATED
+  EVIDENCE_BASED
+}
+
+// ─── Team & Estimation ─────────────────────────────────────────
+
+model RoleProposal {
+  id               String       @id @default(cuid())
+  assessmentId     String       @map("assessment_id")
+  roleName         String       @map("role_name")
+  seniority        Seniority
+  count            Int          @default(1)
+  justification    String
+  responsibilities String
+  phase            String?
+  expertiseRequired String[]    @map("expertise_required")
+  reviewStatus     ReviewStatus @default(DRAFT) @map("review_status")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("role_proposals")
+}
+
+enum Seniority {
+  JUNIOR
+  MID
+  SENIOR
+  LEAD
+  PRINCIPAL
+}
+
+model Estimate {
+  id                  String       @id @default(cuid())
+  assessmentId        String       @map("assessment_id")
+  scenarioName        String       @map("scenario_name")
+  totalEffortHoursLow Int          @map("total_effort_hours_low")
+  totalEffortHoursHigh Int         @map("total_effort_hours_high")
+  totalCostLow        Decimal      @map("total_cost_low") @db.Decimal(12, 2)
+  totalCostHigh       Decimal      @map("total_cost_high") @db.Decimal(12, 2)
+  rateCardId          String       @map("rate_card_id")
+  roleAllocations     Json         @map("role_allocations")
+  assumptions         String?
+  confidence          Float        @default(0.5)
+  reviewStatus        ReviewStatus @default(DRAFT) @map("review_status")
+  createdAt           DateTime     @default(now()) @map("created_at")
+  updatedAt           DateTime     @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  rateCard   RateCard   @relation(fields: [rateCardId], references: [id])
+
+  @@map("estimates")
+}
+
+model RateCard {
+  id        String   @id @default(cuid())
+  name      String
+  currency  String   @default("USD")
+  rates     Json     // [{role, seniority, hourlyRate, dailyRate}]
+  validFrom DateTime @map("valid_from")
+  validTo   DateTime? @map("valid_to")
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  estimates Estimate[]
+
+  @@map("rate_cards")
+}
+
+// ─── Deliverables & Review ─────────────────────────────────────
+
+model Deliverable {
+  id             String          @id @default(cuid())
+  assessmentId   String          @map("assessment_id")
+  deliverableType DeliverableType @map("deliverable_type")
+  templateId     String?         @map("template_id")
+  status         DeliverableStatus @default(GENERATING)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  assessment Assessment          @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  sections   DeliverableSection[]
+  diagrams   Diagram[]
+
+  @@map("deliverables")
+}
+
+enum DeliverableType {
+  EXECUTIVE_SUMMARY
+  ASSESSMENT_REPORT
+  RISK_REGISTER
+  TARGET_STATE
+  ROADMAP
+  TEAM_PROPOSAL
+  ESTIMATE
+  ASSUMPTIONS_GAPS
+  SOW_DRAFT
+  GREENFIELD_DISCOVERY
+}
+
+enum DeliverableStatus {
+  GENERATING
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  EXPORTED
+}
+
+model DeliverableSection {
+  id            String       @id @default(cuid())
+  deliverableId String       @map("deliverable_id")
+  sectionKey    String       @map("section_key")
+  title         String
+  orderIndex    Int          @map("order_index")
+  contentDraft  String?      @map("content_draft")
+  contentFinal  String?      @map("content_final")
+  evidenceIds   String[]     @map("evidence_ids")
+  reviewStatus  ReviewStatus @default(DRAFT) @map("review_status")
+  reviewedById  String?      @map("reviewed_by_id")
+  reviewedAt    DateTime?    @map("reviewed_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  deliverable Deliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+  reviews     Review[]
+
+  @@unique([deliverableId, sectionKey])
+  @@map("deliverable_sections")
+}
+
+enum ReviewStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  NEEDS_REVISION
+}
+
+model Review {
+  id                   String       @id @default(cuid())
+  deliverableSectionId String       @map("deliverable_section_id")
+  reviewerId           String       @map("reviewer_id")
+  action               ReviewAction
+  comments             String?
+  contentBefore        String?      @map("content_before")
+  contentAfter         String?      @map("content_after")
+  createdAt            DateTime     @default(now()) @map("created_at")
+
+  section  DeliverableSection @relation(fields: [deliverableSectionId], references: [id], onDelete: Cascade)
+  reviewer User               @relation(fields: [reviewerId], references: [id])
+
+  @@map("reviews")
+}
+
+enum ReviewAction {
+  APPROVE
+  REJECT
+  EDIT
+  REQUEST_REVISION
+}
+
+// ─── Knowledge Base ────────────────────────────────────────────
+
+model KnowledgeArtifact {
+  id           String              @id @default(cuid())
+  artifactType KnowledgeArtifactType @map("artifact_type")
+  name         String
+  description  String
+  content      Json
+  version      Int                 @default(1)
+  isActive     Boolean             @default(true) @map("is_active")
+  domain       String?
+  tags         String[]
+  createdById  String?             @map("created_by_id")
+  createdAt    DateTime            @default(now()) @map("created_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  @@map("knowledge_artifacts")
+}
+
+enum KnowledgeArtifactType {
+  FRAMEWORK
+  CHECKLIST
+  TEMPLATE
+  HEURISTIC
+  RISK_PATTERN
+  RECOMMENDATION_PATTERN
+  ROLE_CATALOG
+  RATE_CARD
+  TECHNOLOGY_OPTION
+  PLATFORM_GUIDANCE
+  CAPABILITY_MODEL
+  SCORING_MODEL
+  INDUSTRY_OVERLAY
+  CLOUD_OVERLAY
+  QUESTION_TEMPLATE
+}
+
+// ─── Specialized Domain Assessments ────────────────────────────
+
+model DeliveryStrategyAssessment {
+  id                   String   @id @default(cuid())
+  assessmentId         String   @unique @map("assessment_id")
+  teamTopology         Json?    @map("team_topology")
+  releaseModel         String?  @map("release_model")
+  deploymentStrategy   String?  @map("deployment_strategy")
+  branchingStrategy    String?  @map("branching_strategy")
+  environmentPromotion String?  @map("environment_promotion")
+  maturityScore        Float?   @map("maturity_score")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_strategy_assessments")
+}
+
+model TestStrategyAssessment {
+  id                  String   @id @default(cuid())
+  assessmentId        String   @unique @map("assessment_id")
+  testingModel        String?  @map("testing_model")
+  automationMaturity  String?  @map("automation_maturity")
+  coverageVisibility  String?  @map("coverage_visibility")
+  ciCdTestGates       String?  @map("ci_cd_test_gates")
+  maturityScore       Float?   @map("maturity_score")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("test_strategy_assessments")
+}
+
+model DataDistributionAssessment {
+  id                String   @id @default(cuid())
+  assessmentId      String   @unique @map("assessment_id")
+  integrationStyles String[] @map("integration_styles")
+  syncModel         String?  @map("sync_model")
+  eventPatterns     String?  @map("event_patterns")
+  consistencyModel  String?  @map("consistency_model")
+  maturityScore     Float?   @map("maturity_score")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("data_distribution_assessments")
+}
+
+model StorageAssessment {
+  id                     String   @id @default(cuid())
+  assessmentId           String   @unique @map("assessment_id")
+  datastoreTypes         Json?    @map("datastore_types")
+  ownershipModel         String?  @map("ownership_model")
+  transactionalBoundaries String? @map("transactional_boundaries")
+  migrationComplexity    String?  @map("migration_complexity")
+  maturityScore          Float?   @map("maturity_score")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("storage_assessments")
+}
+
+model InfrastructureMaturityAssessment {
+  id                          String   @id @default(cuid())
+  assessmentId                String   @unique @map("assessment_id")
+  iacMaturity                 String?  @map("iac_maturity")
+  standardizationLevel        String?  @map("standardization_level")
+  environmentProvisioning     String?  @map("environment_provisioning")
+  platformEngineeringMaturity String?  @map("platform_engineering_maturity")
+  maturityScore               Float?   @map("maturity_score")
+  createdAt                   DateTime @default(now()) @map("created_at")
+  updatedAt                   DateTime @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("infrastructure_maturity_assessments")
+}
+
+// ─── Severity (shared) ─────────────────────────────────────────
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+// ─── Repository linking (Week 6, ADR-0009/0010) ──────────────
+
+// A RepositoryLink binds an Assessment to a remote code repository.
+// Credentials (PAT) are AES-256-GCM encrypted at rest with a key in
+// `REPO_CREDENTIAL_KEY`. Ingest reuses the Week 5 archive pipeline —
+// we fetch a tarball via the provider API, persist it under a parent
+// Document, and the existing `ingest-archive` worker fans out one
+// `ingest-document` per surviving child.
+model RepositoryLink {
+  id                    String       @id @default(cuid())
+  assessmentId          String       @map("assessment_id")
+  url                   String
+  provider              String
+  authMethod            String       @map("auth_method")
+  /// Pointer into the engagement-scoped credential vault. The PAT
+  /// itself lives there. The legacy in-row encrypted columns were
+  /// dropped after the Slice 3 backfill consolidated every PAT into
+  /// the vault (see migration `20260427201500_drop_legacy_pat_cols`).
+  agentCredentialId     String?      @map("agent_credential_id")
+  lastSyncedAt          DateTime?    @map("last_synced_at")
+  lastSha               String?      @map("last_sha")
+  ingestStatus          IngestStatus @default(PENDING) @map("ingest_status")
+  parentDocumentId      String?      @map("parent_document_id")
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  assessment     Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  parentDocument Document?  @relation("RepoLinkParentDocument", fields: [parentDocumentId], references: [id], onDelete: SetNull)
+  agentCredential AgentCredential? @relation(fields: [agentCredentialId], references: [id], onDelete: SetNull)
+
+  @@index([assessmentId])
+  @@index([agentCredentialId])
+  @@map("repository_links")
+}
+
+// ─── Templates (Phase 4 Slice 4 — customer-uploadable) ─────────
+//
+// Customers upload their own estimation workbooks (.xlsx) and
+// deliverable templates (.docx, .pptx). The engine's runEstimation +
+// generateDeliverable jobs read the engagement's selected template
+// and fill it from engine outputs.
+//
+// Two scopes:
+//   - workspace defaults: `engagementId = null` — seeded by
+//     packages/knowledge-seed/estimation-templates/* on boot.
+//   - per-engagement: `engagementId` set — overrides the default for
+//     just that engagement.
+//
+// Lifecycle: PROPOSED → APPROVED → DEPRECATED. Only APPROVED rows
+// appear in pickers; DEPRECATED rows stay so old fills replay
+// reproducibly.
+//
+// Versioning: re-uploading the same `name` for the same scope creates
+// a new row (not an in-place update). The previous row flips to
+// DEPRECATED on the new row's APPROVED transition. Filled outputs
+// reference the exact `templateId` they ran against.
+
+model Template {
+  id             String         @id @default(cuid())
+  /// null = workspace default, populated = per-engagement override.
+  engagementId   String?        @map("engagement_id")
+  kind           TemplateKind
+  name           String
+  /// Manual semver-style version, owned by whoever uploaded.
+  /// Combined with `name + scope` produces the picker label.
+  version        String
+  filename       String
+  mimeType       String         @map("mime_type")
+  fileSize       Int            @map("file_size")
+  /// MinIO object key — `templates/<id>.<ext>`.
+  storagePath    String         @map("storage_path")
+  /// Binding JSON: maps engine output fields → cell refs / named
+  /// ranges / placeholder tokens. See `services/template/binding.ts`
+  /// for the schema. Null on first upload, populated by the AI
+  /// proposer or by hand-editing.
+  bindingJson    Json?          @map("binding_json")
+  /// PROPOSED → APPROVED → DEPRECATED.
+  status         TemplateStatus @default(PROPOSED)
+  uploadedById   String         @map("uploaded_by_id")
+  approvedById   String?        @map("approved_by_id")
+  approvedAt     DateTime?      @map("approved_at")
+  deprecatedAt   DateTime?      @map("deprecated_at")
+  archivedAt     DateTime?      @map("archived_at")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  engagement Engagement? @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  uploader   User        @relation("TemplateUploader", fields: [uploadedById], references: [id])
+  approver   User?       @relation("TemplateApprover", fields: [approvedById], references: [id])
+  fills      TemplateFill[]
+
+  @@index([engagementId, kind, status])
+  @@index([kind, status])
+  @@map("templates")
+}
+
+enum TemplateKind {
+  ESTIMATION                // Excel WBS workbook
+  // Generic deliverable shells (legacy / fallback). Kept so existing
+  // rows stay valid; the Deliverables UI prefers a per-deliverable-
+  // type kind (below) when one is uploaded and falls back to these.
+  DELIVERABLE_REPORT        // Word deliverable shell
+  DELIVERABLE_PRESENTATION  // PowerPoint deck shell
+  // Per-deliverable-type kinds — 1:1 with the `DeliverableType` enum.
+  // Lets a customer upload a different shell per deliverable type
+  // (e.g. corporate-branded executive deck vs ops-team risk register).
+  // The Deliverables page lists only the types where one of these
+  // (or the legacy fallback above) is APPROVED for the engagement.
+  EXECUTIVE_SUMMARY
+  ASSESSMENT_REPORT
+  RISK_REGISTER
+  TARGET_STATE
+  ROADMAP
+  TEAM_PROPOSAL
+  ESTIMATE
+  ASSUMPTIONS_GAPS
+  SOW_DRAFT
+  GREENFIELD_DISCOVERY
+}
+
+enum TemplateStatus {
+  PROPOSED      // uploaded, binding draft only
+  APPROVED      // bindings reviewed, eligible for picker
+  DEPRECATED    // superseded by a newer version
+}
+
+// One row per fill operation. Stores the produced file's MinIO key
+// and the engine outputs it consumed, so a fill is reproducible /
+// auditable. The `Document` row this references is what lands in the
+// engagement's evidence stream + the user's downloads list.
+model TemplateFill {
+  id            String   @id @default(cuid())
+  templateId    String   @map("template_id")
+  /// Which assessment ran the fill — fills are always assessment-scoped.
+  assessmentId  String   @map("assessment_id")
+  /// Snapshot of the template's binding JSON at fill time. Lets us
+  /// replay or diff even after the template is re-versioned.
+  bindingSnapshot Json?  @map("binding_snapshot")
+  /// MinIO key of the produced file. Mime + filename live on the
+  /// linked Document row.
+  outputDocumentId String? @map("output_document_id")
+  /// Subset of the engine outputs that drove this fill — kept for
+  /// audit. Trimmed (no PII, no secrets) — see filler service.
+  inputsSnapshot Json?    @map("inputs_snapshot")
+  filledAt      DateTime @default(now()) @map("filled_at")
+  filledById    String?  @map("filled_by_id")
+
+  template       Template  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  assessment     Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  outputDocument Document? @relation("TemplateFillOutput", fields: [outputDocumentId], references: [id], onDelete: SetNull)
+
+  @@index([templateId])
+  @@index([assessmentId])
+  @@map("template_fills")
+}
+
+// ─── Application Log ───────────────────────────────────────────
+//
+// `Log` captures application-level traces (worker progress, tRPC
+// errors, ingest warnings) for operator debugging. Distinct from
+// `AuditLog`, which is a business-event ledger (user approved X,
+// AI_CALL happened, etc). See `docs/operations/logs.md`.
+//
+// Retention: rows older than `LOG_RETENTION_DAYS` (default 5) are
+// pruned by the `prune-logs` BullMQ job registered as a repeatable
+// every 6 h on worker start-up. See
+// `apps/web/src/server/queue/jobs/prune-logs.ts`.
+model Log {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  level        LogLevel
+  source       String
+  message      String
+  context      Json?
+  userId       String?  @map("user_id")
+  assessmentId String?  @map("assessment_id")
+  jobId        String?  @map("job_id")
+  error        String?
+
+  @@index([createdAt])
+  @@index([level, createdAt])
+  @@index([source])
+  @@index([assessmentId])
+  @@index([jobId])
+  @@map("logs")
+}
+
+enum LogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}
+
+// ─── Runtime-editable Settings ─────────────────────────────────
+//
+// Key/value store for operator-tunable knobs that used to live as
+// hard-coded module constants (e.g. DOMAIN_ANALYSIS_CONCURRENCY).
+// The point is to let an admin change throughput / pacing without
+// shipping code — the engine reads the effective value through
+// `settings-service.ts`, which falls back to the constant default
+// when the row is absent. `valueJson` is intentionally Json (not a
+// string) so we can store numbers, booleans, or small objects
+// uniformly; the service layer owns the shape per-key.
+//
+// Intended cardinality is tiny (< 50 rows). No indexes beyond the
+// unique key — every lookup is by `key`.
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  valueJson Json     @map("value_json")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedBy String?  @map("updated_by")
+
+  @@map("settings")
+}
+
+// ─── AI model-routing overrides (ADR-0015 §7) ──────────────────
+//
+// Admin-settable runtime overrides for the task → model-binding
+// registry defined in `apps/web/src/server/services/ai/model-
+// registry.ts`. One row per task. Used for:
+//   • incident response ("Anthropic is overloaded, pin
+//     analysis.synthesis to Bedrock for the next hour")
+//   • A/B trials of a new provider before editing defaults
+//
+// `binding` carries a single `ModelBinding` JSON blob (the primary);
+// `fallbacks` carries an array of `ModelBinding`. The registry loader
+// merges these on top of `DEFAULT_REGISTRY` at boot and after any
+// admin write (via `invalidateOverrides`).
+//
+// `expiresAt` lets a pinning decision auto-revert so a frantic
+// incident pin doesn't silently become permanent. NULL = no expiry.
+
+model AiModelOverride {
+  id          String    @id @default(cuid())
+  task        String    @unique
+  binding     Json
+  fallbacks   Json      @default("[]")
+  reason      String
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  expiresAt   DateTime? @map("expires_at")
+
+  @@map("ai_model_overrides")
+}
+
+// ─── Agent Harness (ADR-0014, Phase 4 Slice 0) ─────────────────
+//
+// Trajectory persistence for the agentic evidence-collection phase.
+// An `AgentRun` is one bounded plan-act-observe loop; `AgentStep`
+// rows are its ordered turns; `AgentToolCall` rows are individual
+// tool invocations produced by TOOL_CALL steps. The full row set
+// for a run is sufficient to replay exactly what the model saw —
+// that is the reviewability contract. See ADR-0014 §6.
+//
+// Field naming in this slice follows the Slice 0 spec (idx,
+// inputTokens/outputTokens, argsJson/resultJson, errorClass) rather
+// than the earlier ADR draft; later slices may widen these shapes.
+
+model AgentRun {
+  id              String         @id @default(cuid())
+  assessmentId    String         @map("assessment_id")
+  engagementId    String         @map("engagement_id")
+  planName        String         @map("plan_name")
+  status          AgentRunStatus @default(PROPOSED)
+  budget          Json
+  usage           Json           @default("{}")
+  systemPrompt    String         @map("system_prompt")
+  systemPromptSha String         @map("system_prompt_sha")
+  model           String
+  modelFallback   String?        @map("model_fallback")
+  approvedById    String?        @map("approved_by_id")
+  approvedAt      DateTime?      @map("approved_at")
+  startedAt       DateTime?      @map("started_at")
+  endedAt         DateTime?      @map("ended_at")
+  endReason       String?        @map("end_reason")
+  errorDetails    Json?          @map("error_details")
+  // Soft-archive — same pattern as Assessment. Hides the row from
+  // default lists; child rows (steps, tool calls, credential requests,
+  // workflow step status) cascade only on hard `delete`.
+  archivedAt      DateTime?      @map("archived_at")
+  archivedById    String?        @map("archived_by_id")
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  assessment           Assessment                @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  engagement           Engagement                @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  steps                AgentStep[]
+  credentialRequests   AgentCredentialRequest[]
+  workflowStepStatuses WorkflowStepStatus[]
+
+  @@index([assessmentId])
+  @@index([engagementId, createdAt])
+  @@map("agent_runs")
+}
+
+// ─── Agent Credentials (ADR-0014 §8, ADR-0009 pattern) ─────────────
+//
+// JIT credential flow:
+//   1. Executor reaches a step whose tool declares a `requiresCredentials`
+//      scope (e.g. "github.pat").
+//   2. Vault lookup — if a non-expired, non-revoked `AgentCredential` row
+//      exists for (engagementId, scope), the tool receives the decrypted
+//      secret via `ToolContext.credentials`.
+//   3. Miss → run transitions to AWAITING_USER, a `AgentCredentialRequest`
+//      row is opened, the executor returns. The UI renders a modal
+//      prompting the user for the secret (with the tool's `reason` +
+//      required OAuth-style scopes for display).
+//   4. On submit, the secret is encrypted with `encryptCredential()`
+//      (AES-256-GCM, `REPO_CREDENTIAL_KEY` — same key as ADR-0009 so
+//      rotation is a single operation), written to `AgentCredential`,
+//      the request is FULFILLED, and the executor is re-enqueued for
+//      `runId` to resume from the paused step.
+//
+// Scope values are stable strings the tool registry hands out
+// ("github.pat", "aws.assume_role_arn", "gcp.workload_identity", …).
+// The pair (engagementId, scope) is unique — subsequent grants for the
+// same scope overwrite, which is deliberate: rotating a PAT should not
+// require a second row.
+
+model AgentCredential {
+  id               String    @id @default(cuid())
+  engagementId     String    @map("engagement_id")
+  // Scope id (e.g. "github.pat"). See tool `requiresCredentials`.
+  scope            String
+  encryptedSecret  Bytes     @map("encrypted_secret")
+  secretIv         Bytes     @map("secret_iv")
+  secretTag        Bytes     @map("secret_tag")
+  // Non-secret hints for the UI (e.g. `{ org: "acme", scopes: ["repo:read"] }`
+  // for a GitHub PAT). Never stores the secret itself.
+  metadata         Json?
+  createdById      String    @map("created_by_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  // Optional TTL — the tool or the UI sets this based on policy (e.g.
+  // 24h for a one-off run). Expired rows are treated as missing and
+  // trigger a fresh `AgentCredentialRequest`.
+  expiresAt        DateTime? @map("expires_at")
+  // Manual revocation (admin or engagement owner). Revoked rows are
+  // retained for audit but never decrypted by the executor.
+  revokedAt        DateTime? @map("revoked_at")
+  revokedById      String?   @map("revoked_by_id")
+
+  engagement      Engagement       @relation(fields: [engagementId], references: [id], onDelete: Cascade)
+  repositoryLinks RepositoryLink[]
+
+  @@unique([engagementId, scope])
+  @@index([engagementId])
+  @@map("agent_credentials")
+}
+
+// ─── Workflow step status (Slice 2 — explicit completion lock) ────
+//
+// One row per (runId, nodeId) capturing the user's explicit state for
+// a workflow node. The diagram derives a *soft* status from assessment
+// data (see `services/agent/workflow.ts:deriveStepStatus`); when an
+// explicit row exists here it overrides the soft derivation. Roll-back
+// = delete the explicit row, returning the node to soft-derived state
+// without touching the underlying outputs (uploaded docs / answers /
+// findings / etc.).
+//
+// `nodeId` is the planner-emitted `workflow:<idx>:<TYPE>` string. We
+// don't FK it to anything because plan nodes live inside the
+// `AgentRun.AgentStep.payload` JSON, not as their own rows.
+
+model WorkflowStepStatus {
+  id            String                   @id @default(cuid())
+  runId         String                   @map("run_id")
+  nodeId        String                   @map("node_id")
+  status        WorkflowStepExplicitStatus
+  /// Free-form notes the user attached on Mark complete / Save.
+  note          String?
+  updatedById   String?                  @map("updated_by_id")
+  createdAt     DateTime                 @default(now()) @map("created_at")
+  updatedAt     DateTime                 @updatedAt @map("updated_at")
+
+  run AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, nodeId])
+  @@index([runId])
+  @@map("workflow_step_status")
+}
+
+enum WorkflowStepExplicitStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+model AgentCredentialRequest {
+  id              String                  @id @default(cuid())
+  runId           String                  @map("run_id")
+  // The step that asked — null only for plan-time pre-flight checks.
+  stepId          String?                 @map("step_id")
+  scope           String
+  // Human-readable justification surfaced to the user in the prompt.
+  reason          String
+  // Provider-side scopes required (e.g. ["repo:read", "workflow:read"]).
+  // Shown to the user so they grant a least-privilege token.
+  requiredScopes  String[]                @map("required_scopes")
+  status          CredentialRequestStatus @default(PENDING)
+  fulfilledAt     DateTime?               @map("fulfilled_at")
+  fulfilledById   String?                 @map("fulfilled_by_id")
+  // Captured if the user declines — surfaced on the run timeline.
+  denialReason    String?                 @map("denial_reason")
+  createdAt       DateTime                @default(now()) @map("created_at")
+
+  run AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId, status])
+  @@map("agent_credential_requests")
+}
+
+enum CredentialRequestStatus {
+  PENDING
+  FULFILLED
+  DENIED
+  EXPIRED
+  SUPERSEDED
+}
+
+enum AgentRunStatus {
+  PROPOSED
+  APPROVED
+  RUNNING
+  AWAITING_USER
+  COMPLETED
+  BUDGET_EXHAUSTED
+  CANCELLED
+  FAILED
+}
+
+model AgentStep {
+  id           String        @id @default(cuid())
+  runId        String        @map("run_id")
+  idx          Int
+  kind         AgentStepKind
+  payload      Json
+  inputTokens  Int           @default(0) @map("input_tokens")
+  outputTokens Int           @default(0) @map("output_tokens")
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  run         AgentRun              @relation(fields: [runId], references: [id], onDelete: Cascade)
+  toolCalls   AgentToolCall[]
+  annotations AgentStepAnnotation[]
+
+  @@unique([runId, idx])
+  @@map("agent_steps")
+}
+
+enum AgentStepKind {
+  PLAN
+  TOOL_CALL
+  ASSISTANT
+  USER_INPUT
+  SYSTEM
+}
+
+// Reviewer annotations on agent steps. One-to-many on `AgentStep`;
+// captured in the step-inspection side panel so a reviewer can pin
+// "this failure mode is worth following up" without leaving the
+// trace. Anyone with read access on the parent assessment may write.
+// Soft-delete via the `resolvedAt` flag rather than hard delete so the
+// audit trail of "someone flagged this once" survives.
+model AgentStepAnnotation {
+  id          String    @id @default(cuid())
+  stepId      String    @map("step_id")
+  authorId    String?   @map("author_id")
+  body        String
+  resolvedAt  DateTime? @map("resolved_at")
+  resolvedById String?  @map("resolved_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  step AgentStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([stepId])
+  @@map("agent_step_annotations")
+}
+
+model AgentToolCall {
+  id           String         @id @default(cuid())
+  stepId       String         @map("step_id")
+  toolName     String         @map("tool_name")
+  argsJson     Json           @map("args_json")
+  status       ToolCallStatus
+  startedAt    DateTime       @map("started_at")
+  endedAt      DateTime?      @map("ended_at")
+  durationMs   Int?           @map("duration_ms")
+  resultJson   Json?          @map("result_json")
+  errorClass   String?        @map("error_class")
+  evidenceIds  String[]       @default([]) @map("evidence_ids")
+
+  step AgentStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([toolName, status])
+  @@map("agent_tool_calls")
+}
+
+enum ToolCallStatus {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+  TIMED_OUT
+  CANCELLED
+}
+
+// ─── Audit Trail ───────────────────────────────────────────────
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?  @map("user_id")
+  action       String
+  entityType   String   @map("entity_type")
+  entityId     String   @map("entity_id")
+  details      Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

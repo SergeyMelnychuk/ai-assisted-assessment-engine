@@ -1,0 +1,40 @@
+{
+  "domain": "cloud_infrastructure",
+  "name": "questions.cloud_infrastructure.baseline",
+  "description": "Baseline questions for cloud footprint, topology, and Infrastructure-as-Code maturity.",
+  "questions": [
+    {
+      "text": "Which cloud provider(s) host production workloads?",
+      "type": "FREE_TEXT",
+      "priority": "CRITICAL",
+      "rationale": "Cloud choice prunes service catalog, compliance options, and pricing model assumptions."
+    },
+    {
+      "text": "Is the platform single-region, multi-region active/passive, or multi-region active/active?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Single region", "Active/passive multi-region", "Active/active multi-region", "Hybrid on-prem + cloud"],
+      "priority": "HIGH",
+      "rationale": "Topology determines RTO/RPO ceiling and drives significant cost/complexity trade-offs."
+    },
+    {
+      "text": "What is the containerisation / compute strategy?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Kubernetes (self-managed)", "Managed Kubernetes (EKS/GKE/AKS)", "Serverless (Lambda/Functions)", "VMs / IaaS", "Mixed"],
+      "priority": "HIGH",
+      "rationale": "Compute model drives operator skill requirements and the deployment pipeline's shape."
+    },
+    {
+      "text": "Which Infrastructure-as-Code tool is in use?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Terraform / OpenTofu", "Pulumi", "CDK / CDKTF", "Ansible / Chef / Puppet", "Click-ops / console", "Mixed"],
+      "priority": "HIGH",
+      "rationale": "IaC tool choice and coverage gap tell us how reproducible the environment actually is."
+    },
+    {
+      "text": "How many environments exist (dev, staging, prod, DR, preview) and are they parity-true to prod?",
+      "type": "FREE_TEXT",
+      "priority": "MEDIUM",
+      "rationale": "Parity gaps are where late-stage surprises come from — common root cause for prod-only bugs."
+    }
+  ]
+}

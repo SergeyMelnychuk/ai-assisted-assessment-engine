@@ -1,0 +1,90 @@
+%% Sequence — ingest vs analyse as separate lanes (Phase 3 Week 1, ADR-0001).
+%%
+%% Two distinct phases now, not one. Ingest is deterministic (download →
+%% extract → chunk → insert Evidence), deliberately AI-free. Analyse is
+%% the per-assessment Claude call, triggered separately by the user.
+%%
+%% Read top-to-bottom. Top half = ingest; bottom half = analyse.
+
+sequenceDiagram
+    autonumber
+    participant U as User (browser)
+    participant W as Next.js web
+    participant DB as Postgres (Prisma)
+    participant S as MinIO (S3)
+    participant R as Redis (BullMQ)
+    participant K as Worker
+    participant C as Claude
+
+    Note over U,C: Phase A — Ingest (no AI call)
+
+    U->>W: POST /api/documents/upload
+    W->>W: session + assertAssessmentAccess()
+    W->>DB: INSERT Document (ingestStatus=PENDING)
+    W->>S: putObject(storageKey)
+    W->>R: queue.add("ingest-document", { documentId })
+    W-->>U: 200 { documentId, status: PENDING }
+
+    R-->>K: deliver ingest-document job
+    K->>DB: UPDATE Document ingestStatus=EXTRACTING
+    K->>S: getObjectBuffer(storageKey)
+    K->>K: extractDocumentText() · chunkDocumentText()
+    K->>DB: UPDATE Document ingestStatus=CHUNKED, chunkCount=N
+    K->>DB: INSERT Evidence × N (one per chunk)
+    K->>DB: UPDATE Document ingestStatus=READY, extractedSummary (first chunk)
+    K->>DB: INSERT AuditLog (INGEST_DOCUMENT, chunk count)
+
+    Note over K,C: No Claude call in this lane.
+
+    Note over U,C: Phase B — Analyse (per-assessment, re-runnable)
+
+    U->>W: POST /api/trpc/analysis.run { assessmentId }
+    W->>DB: UPDATE assessment status = ANALYSIS
+    W->>R: queue.add("run-analysis", { assessmentId })
+    W->>DB: INSERT AuditLog (ENQUEUE_ANALYSIS, jobId)
+    W-->>U: 200 { jobId }
+
+    R-->>K: deliver run-analysis job
+    K->>DB: fetch activeDomains + answered Questions + KB RISK_PATTERN rows
+
+    Note over K,C: Per-domain fan-out (ADR-0002) — concurrency cap 2-3.<br/>One Claude call per active domain. Failures isolated.
+    loop for each domain in activeDomains
+        K->>DB: rag-retriever.retrieve({ assessmentId, domain, topK })
+        K->>C: callClaude(PER_DOMAIN_FINDING_PROMPT, domain, evidence)
+        C-->>K: JSON { findings[], risks[], recommendations[], assumptions[] } for this domain
+    end
+    K->>K: aggregate per-domain slices (track failedDomains[])
+
+    Note over K,DB: Atomic $transaction.<br/>Delete DRAFT rows, insert new,<br/>preserve reviewed rows.
+
+    K->>DB: BEGIN
+    K->>DB: DELETE Findings WHERE reviewStatus='DRAFT'
+    K->>DB: DELETE Risks WHERE reviewStatus='DRAFT'
+    K->>DB: DELETE Recommendations WHERE reviewStatus='DRAFT'
+    K->>DB: DELETE Assumptions WHERE requiresValidation=true
+    K->>DB: INSERT Findings / Risks / Recommendations / Assumptions
+    K->>DB: INSERT AuditLog (RUN_ANALYSIS, counts + tokens + failedDomains[])
+    K->>DB: COMMIT
+
+    Note over K,C: Pass 2 — rubric-anchored scoring (separate Claude call)
+    K->>DB: fetch Framework scoring criteria + findings
+    K->>C: callClaude(DOMAIN_SCORING_PROMPT, ...)
+    C-->>K: JSON { domainScores[] }
+    K->>DB: partition per domain:<br/>create (new) / update (DRAFT) / skip (locked)
+
+    Note over U,W: Polling during either phase
+    U->>W: GET document.listByAssessment + finding.listByAssessment
+    W->>DB: read latest state
+    W-->>U: stream new rows as they land
+
+    alt Ingest failure
+        K->>DB: UPDATE Document ingestStatus=FAILED
+        K->>DB: INSERT AuditLog (INGEST_DOCUMENT_FAILED, classified category)
+        U->>W: sees ingestStatus=FAILED → FailureBanner + Retry button
+    end
+
+    alt Analyse failure (Anthropic 529 / invalid key / truncated output)
+        C-->>K: 400 / 529 / malformed JSON
+        K->>DB: UPDATE Assessment status rewound<br/>AuditLog (RUN_ANALYSIS_FAILED)
+        U->>W: sees status=FAILED → offers Retry button (AI-only, ingest state preserved)
+    end

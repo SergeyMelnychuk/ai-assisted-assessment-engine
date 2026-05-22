@@ -1,0 +1,53 @@
+{
+  "domain": "security_iam",
+  "name": "questions.security_iam.baseline",
+  "description": "Baseline questions for authentication, authorization, encryption, and compliance posture.",
+  "questions": [
+    {
+      "text": "What is the primary user-authentication mechanism?",
+      "type": "SINGLE_CHOICE",
+      "options": [
+        "Username/password only",
+        "Federated SSO (SAML/OIDC)",
+        "MFA-enforced SSO",
+        "Passwordless / WebAuthn",
+        "Bespoke / other"
+      ],
+      "priority": "CRITICAL",
+      "rationale": "Authentication floor determines the ceiling for almost every other IAM control."
+    },
+    {
+      "text": "Which authorization model is in use?",
+      "type": "SINGLE_CHOICE",
+      "options": ["RBAC (role-based)", "ABAC (attribute-based)", "ReBAC (relationship-based)", "Mixed", "Ad-hoc / none"],
+      "priority": "HIGH",
+      "rationale": "Authorization maturity correlates directly with the blast-radius of a credential compromise."
+    },
+    {
+      "text": "Is sensitive data encrypted at rest AND in transit?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Yes, both", "In transit only", "At rest only", "Neither / unsure"],
+      "priority": "CRITICAL",
+      "rationale": "Table-stakes control — gaps here usually mean the engagement needs a remediation track, not an assessment track."
+    },
+    {
+      "text": "Any security incidents or near-misses in the last 12 months?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Recent incidents are the richest source of evidence for control weaknesses and cultural posture."
+    },
+    {
+      "text": "Which compliance regimes apply (GDPR, HIPAA, PCI, SOC 2, ISO 27001, etc.)?",
+      "type": "FREE_TEXT",
+      "priority": "CRITICAL",
+      "rationale": "Compliance set prunes the option tree on cloud region, logging, data residency, and audit requirements."
+    },
+    {
+      "text": "Is secret management centralised (vault / KMS / cloud native secrets)?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Centralised", "Per-app / ad-hoc", "In config files / env", "Unsure"],
+      "priority": "HIGH",
+      "rationale": "Secret sprawl is a leading indicator of broader hygiene issues across the estate."
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "name": "Architecture Assessment Framework",
+  "description": "Standard framework for assessing an existing software architecture",
+  "version": 1,
+  "applicableTo": {
+    "assessmentTypes": ["architecture_assessment", "modernization_assessment"],
+    "assessmentModes": ["EXISTING_SYSTEM", "MODERNIZATION"]
+  },
+  "domains": [
+    {
+      "key": "business_context",
+      "name": "Business Context",
+      "description": "Understanding of business goals, drivers, and constraints",
+      "weight": 0.1,
+      "scoringCriteria": [
+        { "level": 1, "description": "Business goals are unclear or not documented" },
+        { "level": 2, "description": "Basic business goals exist but lack detail" },
+        { "level": 3, "description": "Business goals are documented and understood" },
+        { "level": 4, "description": "Goals are well-defined with measurable KPIs" },
+        { "level": 5, "description": "Goals are strategic, measurable, and regularly reviewed" }
+      ]
+    },
+    {
+      "key": "architecture",
+      "name": "Architecture",
+      "description": "Quality, suitability, and maturity of the current software architecture",
+      "weight": 0.2,
+      "scoringCriteria": [
+        { "level": 1, "description": "No documented architecture; ad hoc design" },
+        { "level": 2, "description": "Basic architecture exists but is not well documented or maintained" },
+        { "level": 3, "description": "Architecture is documented, follows patterns, covers main concerns" },
+        { "level": 4, "description": "Architecture is well-designed, documented, reviewed, and maintained" },
+        { "level": 5, "description": "Architecture is exemplary with clear evolution strategy" }
+      ]
+    },
+    {
+      "key": "security_iam",
+      "name": "Security & IAM",
+      "description": "Security posture, identity management, and access control",
+      "weight": 0.15,
+      "scoringCriteria": [
+        { "level": 1, "description": "Minimal security controls; no IAM strategy" },
+        { "level": 2, "description": "Basic auth/authz exists but gaps in coverage" },
+        { "level": 3, "description": "Standard security practices implemented; IAM in place" },
+        { "level": 4, "description": "Comprehensive security with monitoring and incident response" },
+        { "level": 5, "description": "Security-first culture with automated controls and regular audits" }
+      ]
+    },
+    {
+      "key": "integrations_apis",
+      "name": "Integrations & APIs",
+      "description": "API design, integration patterns, and third-party dependencies",
+      "weight": 0.1,
+      "scoringCriteria": [
+        { "level": 1, "description": "Ad hoc integrations; no API strategy" },
+        { "level": 2, "description": "Some APIs exist but inconsistent design" },
+        { "level": 3, "description": "APIs follow consistent patterns; integrations documented" },
+        { "level": 4, "description": "API-first design; versioning, documentation, monitoring" },
+        { "level": 5, "description": "Mature API platform with governance and self-service" }
+      ]
+    },
+    {
+      "key": "cloud_infrastructure",
+      "name": "Cloud & Infrastructure",
+      "description": "Cloud strategy, infrastructure maturity, and operational readiness",
+      "weight": 0.1,
+      "scoringCriteria": [
+        { "level": 1, "description": "Manual infrastructure; no cloud strategy" },
+        { "level": 2, "description": "Some cloud services used; limited automation" },
+        { "level": 3, "description": "Cloud-native approach with IaC and standard patterns" },
+        { "level": 4, "description": "Mature cloud platform with automation and governance" },
+        { "level": 5, "description": "Platform engineering with self-service and policy-as-code" }
+      ]
+    },
+    {
+      "key": "devops_cicd",
+      "name": "DevOps / CI-CD",
+      "description": "Development practices, CI/CD maturity, and deployment automation",
+      "weight": 0.1,
+      "scoringCriteria": [
+        { "level": 1, "description": "Manual builds and deployments" },
+        { "level": 2, "description": "Basic CI exists; manual deployments" },
+        { "level": 3, "description": "CI/CD pipeline with automated testing and deployment" },
+        { "level": 4, "description": "Mature CI/CD with quality gates, progressive rollout" },
+        { "level": 5, "description": "Fully automated with canary/blue-green and rollback" }
+      ]
+    },
+    {
+      "key": "observability",
+      "name": "Observability",
+      "description": "Monitoring, logging, alerting, and operational visibility",
+      "weight": 0.1,
+      "scoringCriteria": [
+        { "level": 1, "description": "Minimal logging; no monitoring" },
+        { "level": 2, "description": "Basic logging and some monitoring" },
+        { "level": 3, "description": "Structured logging, metrics, and alerting" },
+        { "level": 4, "description": "Full observability stack with tracing and dashboards" },
+        { "level": 5, "description": "Proactive observability with SLOs, automated remediation" }
+      ]
+    },
+    {
+      "key": "nfrs",
+      "name": "Non-Functional Requirements",
+      "description": "Coverage and implementation of NFRs (performance, scalability, availability, etc.)",
+      "weight": 0.15,
+      "scoringCriteria": [
+        { "level": 1, "description": "NFRs not defined or addressed" },
+        { "level": 2, "description": "Some NFRs mentioned but not measured" },
+        { "level": 3, "description": "NFRs defined and partially implemented" },
+        { "level": 4, "description": "NFRs defined, measured, and actively managed" },
+        { "level": 5, "description": "NFRs continuously validated with automated testing" }
+      ]
+    }
+  ]
+}

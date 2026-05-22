@@ -1,0 +1,47 @@
+{
+  "domain": "devops_cicd",
+  "name": "questions.devops_cicd.baseline",
+  "description": "Baseline questions for source control, CI/CD pipeline, deployment cadence, and rollback.",
+  "questions": [
+    {
+      "text": "Which source-control platform hosts the codebase?",
+      "type": "SINGLE_CHOICE",
+      "options": ["GitHub", "GitLab", "Bitbucket", "Azure DevOps", "Other / mixed"],
+      "priority": "HIGH",
+      "rationale": "Platform drives integration patterns for CI/CD, code scanning, and identity."
+    },
+    {
+      "text": "Which CI/CD system runs builds and deploys?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "CI/CD system dictates what platform skills and migration complexity to expect."
+    },
+    {
+      "text": "How often do you deploy the main production workload?",
+      "type": "SINGLE_CHOICE",
+      "options": ["On-demand (multiple per day)", "Daily", "Weekly", "Biweekly / monthly", "Quarterly or slower"],
+      "priority": "CRITICAL",
+      "rationale": "Deploy frequency is the single strongest correlate of delivery maturity (DORA metrics)."
+    },
+    {
+      "text": "Do automated tests gate production deploys?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Yes — full suite required", "Partial — smoke tests only", "Advisory / non-blocking", "No"],
+      "priority": "HIGH",
+      "rationale": "Gating pressure is the difference between a safety net and theatre."
+    },
+    {
+      "text": "What is the rollback / forward-fix strategy for a bad production release?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "A tested rollback path is evidence of real operational maturity."
+    },
+    {
+      "text": "Is the deployment pipeline fully automated from merge to production?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Yes, merge triggers prod", "Merge triggers staging, manual gate to prod", "Mostly manual", "Unsure"],
+      "priority": "HIGH",
+      "rationale": "Manual handoffs predict long lead time and human-error incident patterns."
+    }
+  ]
+}

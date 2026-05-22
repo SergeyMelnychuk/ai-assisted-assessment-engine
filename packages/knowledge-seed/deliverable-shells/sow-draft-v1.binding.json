@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "templateKind": "SOW_DRAFT",
+  "notes": "Hand-authored workspace-default binding for the Statement of Work (Draft) v1 shell. The body of the document is intentionally legal-team boilerplate — the AI does not author SOW prose; we only stub the engagement metadata via {{tokens}} so the legal team starts from a populated skeleton. Each entry maps a single engine output to a {{token}} that appears verbatim in one <w:t> run inside word/document.xml; the docx filler does a flat string replace, so split runs would silently miss. seed: {\"name\":\"Statement of Work (Draft)\",\"version\":\"v1\",\"kind\":\"SOW_DRAFT\"}",
+  "entries": [
+    {
+      "field": "project.name",
+      "target": { "kind": "docx.placeholder", "token": "{{project_name}}" },
+      "format": "auto",
+      "note": "Engagement summary block + Section 2 (Project Description)."
+    },
+    {
+      "field": "project.industry",
+      "target": { "kind": "docx.placeholder", "token": "{{project_industry}}" },
+      "format": "auto",
+      "note": "Engagement summary block — industry context for the legal review."
+    },
+    {
+      "field": "project.description",
+      "target": { "kind": "docx.placeholder", "token": "{{project_description}}" },
+      "format": "auto",
+      "note": "Section 2 narrative — the descriptive paragraph the engine carries on ProjectContext."
+    },
+    {
+      "field": "project.expectedTimeline",
+      "target": { "kind": "docx.placeholder", "token": "{{project_expected_timeline}}" },
+      "format": "auto",
+      "note": "Engagement summary block + Section 5 (Timeline)."
+    },
+    {
+      "field": "engagement.clientName",
+      "target": { "kind": "docx.placeholder", "token": "{{client_name}}" },
+      "format": "auto",
+      "note": "Document header, Section 1 (Parties), Section 10 client-signature block."
+    },
+    {
+      "field": "engagement.name",
+      "target": { "kind": "docx.placeholder", "token": "{{engagement_name}}" },
+      "format": "auto",
+      "note": "Engagement summary block + Section 2 header line."
+    },
+    {
+      "field": "totals.scenarioName",
+      "target": { "kind": "docx.placeholder", "token": "{{scenario_name}}" },
+      "format": "auto",
+      "note": "Engagement summary block — labels which estimate scenario this SOW reflects."
+    },
+    {
+      "field": "totals.effortHoursLow",
+      "target": { "kind": "docx.placeholder", "token": "{{effort_hours_low}}" },
+      "format": "auto",
+      "note": "Section 6 (Fees) — low-end effort estimate in hours."
+    },
+    {
+      "field": "totals.effortHoursHigh",
+      "target": { "kind": "docx.placeholder", "token": "{{effort_hours_high}}" },
+      "format": "auto",
+      "note": "Section 6 (Fees) — high-end effort estimate in hours."
+    },
+    {
+      "field": "totals.costLow",
+      "target": { "kind": "docx.placeholder", "token": "{{cost_low}}" },
+      "format": "currency",
+      "note": "Section 6 (Fees) — low-end fees, formatted with two decimals."
+    },
+    {
+      "field": "totals.costHigh",
+      "target": { "kind": "docx.placeholder", "token": "{{cost_high}}" },
+      "format": "currency",
+      "note": "Section 6 (Fees) — high-end fees."
+    },
+    {
+      "field": "totals.confidence",
+      "target": { "kind": "docx.placeholder", "token": "{{confidence}}" },
+      "format": "percent",
+      "note": "Section 6 (Fees) — estimate confidence printed as a percentage."
+    },
+    {
+      "field": "totals.assumptions",
+      "target": { "kind": "docx.placeholder", "token": "{{assumptions}}" },
+      "format": "auto",
+      "note": "Section 7 (Assumptions) body — the assumptions block from the latest estimate."
+    },
+    {
+      "field": "totals.currency",
+      "target": { "kind": "docx.placeholder", "token": "{{currency}}" },
+      "format": "auto",
+      "note": "Section 6 (Fees) — currency code beside each cost figure."
+    },
+    {
+      "field": "generated.date",
+      "target": { "kind": "docx.placeholder", "token": "{{generated_date}}" },
+      "format": "date",
+      "note": "Page footer + Engagement summary block — ISO date this draft was generated."
+    }
+  ]
+}

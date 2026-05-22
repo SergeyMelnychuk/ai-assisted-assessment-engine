@@ -1,0 +1,37 @@
+{
+  "domain": "business_context",
+  "name": "questions.business_context.baseline",
+  "description": "Baseline intake questions covering business drivers, stakeholders, and constraints.",
+  "questions": [
+    {
+      "text": "What is the primary business goal driving this engagement?",
+      "type": "FREE_TEXT",
+      "priority": "CRITICAL",
+      "rationale": "Anchors every downstream recommendation — without a clear goal, tradeoffs can't be evaluated."
+    },
+    {
+      "text": "Who are the target users or customer segments, and what problems are we solving for them?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "User context shapes NFRs (scale, latency, geography) and guides feature prioritisation."
+    },
+    {
+      "text": "What are the non-negotiable business constraints (deadlines, budget caps, regulatory mandates)?",
+      "type": "FREE_TEXT",
+      "priority": "CRITICAL",
+      "rationale": "Hard constraints bound the solution space before any technical trade-off is considered."
+    },
+    {
+      "text": "Who are the key stakeholders and decision-makers on the sponsor side?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Review loops and buy-in depend on getting the right names into the stakeholder map."
+    },
+    {
+      "text": "What does 'success' look like 12–18 months after delivery? Any measurable KPIs?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Measurable outcomes sharpen roadmap sequencing and unlock evidence-based scoring."
+    }
+  ]
+}

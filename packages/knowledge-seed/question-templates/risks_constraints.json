@@ -1,0 +1,31 @@
+{
+  "domain": "risks_constraints",
+  "name": "questions.risks_constraints.baseline",
+  "description": "Baseline questions about known risks, open dependencies, and constraints flagged by the client.",
+  "questions": [
+    {
+      "text": "What are the top three risks the sponsor is most worried about today?",
+      "type": "FREE_TEXT",
+      "priority": "CRITICAL",
+      "rationale": "Sponsor-stated risks are a strong signal for where to concentrate assessment depth."
+    },
+    {
+      "text": "Are there hard dependencies on other teams, vendors, or regulatory milestones?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "External dependencies are a common reason good plans slip — naming them unblocks contingency planning."
+    },
+    {
+      "text": "What organisational or political constraints should we be aware of?",
+      "type": "FREE_TEXT",
+      "priority": "MEDIUM",
+      "rationale": "Hidden org-level constraints often outrank technical ones for actual feasibility."
+    },
+    {
+      "text": "Any prior assessments or audit findings still outstanding?",
+      "type": "FREE_TEXT",
+      "priority": "MEDIUM",
+      "rationale": "Prior findings are cheap evidence — often flag 60%+ of what we'd otherwise re-discover."
+    }
+  ]
+}

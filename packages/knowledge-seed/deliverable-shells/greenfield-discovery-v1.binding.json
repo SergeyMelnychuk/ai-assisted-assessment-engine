@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "templateKind": "GREENFIELD_DISCOVERY",
+  "notes": "Hand-authored workspace-default binding for the Greenfield Discovery v1 Word shell. Designed for pre-implementation engagements where the engine has rich project-context fields populated. Heavy use of project.* bindings — this is the deliverable that benefits most from the engine's project-context capture. Sections covered: cover, vision, business goals, key capabilities (target), constraints, recommended architecture style, technology choices, team shape, phasing, risks, recommendations. seed: {\"name\":\"Greenfield Discovery\",\"version\":\"v1\",\"kind\":\"GREENFIELD_DISCOVERY\"}",
+  "entries": [
+    {
+      "field": "project.name",
+      "target": { "kind": "docx.placeholder", "token": "{{project_name}}" },
+      "format": "auto",
+      "note": "Cover headline — the project under discovery."
+    },
+    {
+      "field": "project.industry",
+      "target": { "kind": "docx.placeholder", "token": "{{project_industry}}" },
+      "format": "auto",
+      "note": "Cover and technology-choices section — anchors industry context."
+    },
+    {
+      "field": "project.description",
+      "target": { "kind": "docx.placeholder", "token": "{{project_description}}" },
+      "format": "auto",
+      "note": "Vision and target-state narrative."
+    },
+    {
+      "field": "project.businessGoals",
+      "target": { "kind": "docx.placeholder", "token": "{{business_goals}}" },
+      "format": "auto",
+      "note": "Business goals section — drives downstream architecture/team choices."
+    },
+    {
+      "field": "project.expectedTimeline",
+      "target": { "kind": "docx.placeholder", "token": "{{expected_timeline}}" },
+      "format": "auto",
+      "note": "Constraints and phasing sections."
+    },
+    {
+      "field": "project.budgetSensitivity",
+      "target": { "kind": "docx.placeholder", "token": "{{budget_sensitivity}}" },
+      "format": "auto",
+      "note": "Constraints and phasing sections."
+    },
+    {
+      "field": "project.complianceRequirements",
+      "target": { "kind": "docx.placeholder", "token": "{{compliance_requirements}}" },
+      "format": "list",
+      "note": "Constraints and technology-choices sections — joined with ', ' by the filler."
+    },
+    {
+      "field": "engagement.clientName",
+      "target": { "kind": "docx.placeholder", "token": "{{client_name}}" },
+      "format": "auto",
+      "note": "Cover — 'Prepared for' line."
+    },
+    {
+      "field": "engagement.name",
+      "target": { "kind": "docx.placeholder", "token": "{{engagement_name}}" },
+      "format": "auto",
+      "note": "Cover — engagement label."
+    },
+    {
+      "field": "totals.scenarioName",
+      "target": { "kind": "docx.placeholder", "token": "{{scenario_name}}" },
+      "format": "auto",
+      "note": "Vision — names the scenario in scope."
+    },
+    {
+      "field": "totals.effortHoursLow",
+      "target": { "kind": "docx.placeholder", "token": "{{effort_hours_low}}" },
+      "format": "auto",
+      "note": "Team-shape section — low-end effort envelope."
+    },
+    {
+      "field": "totals.effortHoursHigh",
+      "target": { "kind": "docx.placeholder", "token": "{{effort_hours_high}}" },
+      "format": "auto",
+      "note": "Team-shape section — high-end effort envelope."
+    },
+    {
+      "field": "totals.costLow",
+      "target": { "kind": "docx.placeholder", "token": "{{cost_low}}" },
+      "format": "currency",
+      "note": "Team-shape section — low-end cost envelope."
+    },
+    {
+      "field": "totals.costHigh",
+      "target": { "kind": "docx.placeholder", "token": "{{cost_high}}" },
+      "format": "currency",
+      "note": "Team-shape section — high-end cost envelope."
+    },
+    {
+      "field": "totals.confidence",
+      "target": { "kind": "docx.placeholder", "token": "{{confidence}}" },
+      "format": "percent",
+      "note": "Architecture-style section — confidence in the recommendation."
+    },
+    {
+      "field": "totals.assumptions",
+      "target": { "kind": "docx.placeholder", "token": "{{assumptions}}" },
+      "format": "auto",
+      "note": "Architecture-style section — assumptions behind the recommendation."
+    },
+    {
+      "field": "totals.currency",
+      "target": { "kind": "docx.placeholder", "token": "{{currency}}" },
+      "format": "auto",
+      "note": "Team-shape section — currency for the cost envelope."
+    },
+    {
+      "field": "recommendations.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{recommendations_list}}" },
+      "format": "auto",
+      "note": "Recommendations section — engine-produced bullet list."
+    },
+    {
+      "field": "risks.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{risks_list}}" },
+      "format": "auto",
+      "note": "Risks section — engine-produced bullet list."
+    },
+    {
+      "field": "generated.date",
+      "target": { "kind": "docx.placeholder", "token": "{{generated_date}}" },
+      "format": "date",
+      "note": "Cover — date the report was generated."
+    }
+  ]
+}

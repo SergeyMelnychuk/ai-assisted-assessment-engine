@@ -1,0 +1,66 @@
+%% Dev-time deployment topology via docker-compose + two local Node
+%% processes. Prod-shaped notes appear alongside in the architecture
+%% README (§13).
+
+flowchart LR
+    subgraph localhost["Developer machine (localhost)"]
+        direction TB
+
+        subgraph node["Node processes"]
+            direction LR
+            web[["pnpm dev<br/>Next.js on :3000<br/>NEXTAUTH_URL locked"]]
+            worker[["pnpm worker<br/>tsx src/server/queue/worker.ts<br/>BullMQ concurrency=5<br/>lockDuration 10 min"]]
+        end
+
+        subgraph dc["docker-compose services"]
+            direction LR
+            pg[(Postgres 16<br/>+ pgvector<br/>:5432)]
+            rd[(Redis 7<br/>:6379)]
+            mn[(MinIO<br/>S3 :9000<br/>console :9001)]
+            pu[[PlantUML server<br/>:8081]]
+        end
+
+        web --- rd
+        web --- pg
+        web --- mn
+        worker --- rd
+        worker --- pg
+        worker --- mn
+        worker -.-> pu
+    end
+
+    web --> anthropic["Anthropic API<br/>api.anthropic.com"]
+    worker --> anthropic
+    worker --> openai["OpenAI API<br/>api.openai.com<br/>embeddings only"]
+    worker --> gh["GitHub API<br/>api.github.com<br/>tarballs (PAT)"]
+
+    subgraph ports["Exposed ports"]
+        direction TB
+        p1["3000 · Next.js (authed app + tRPC + REST)"]
+        p2["9001 · MinIO console (admin UI)"]
+        p3["8081 · PlantUML (optional)"]
+    end
+
+    web --- p1
+    mn --- p2
+    pu --- p3
+
+    subgraph secrets[".env (apps/web/.env)"]
+        direction TB
+        e1["DATABASE_URL=postgres://copilot:copilot_dev@localhost:5432/assessment_copilot"]
+        e2["REDIS_URL=redis://localhost:6379"]
+        e3["S3_ENDPOINT=http://localhost:9000 + keys"]
+        e4["NEXTAUTH_SECRET / NEXTAUTH_URL"]
+        e5["ANTHROPIC_API_KEY=sk-ant-..."]
+        e6["OPENAI_API_KEY (or EMBEDDING_MODE=fake)"]
+        e7["REPO_CREDENTIAL_KEY (or REPO_CREDENTIAL_MODE=fake)"]
+        e8["PLANTUML_SERVER_URL=http://localhost:8081"]
+    end
+
+    secrets -.-> web
+    secrets -.-> worker
+
+    classDef ports fill:#e8f0ff,stroke:#4a7aff,color:#1a3a8a
+    classDef secrets fill:#fff4d6,stroke:#aa6500,color:#5a3800
+    class ports ports
+    class secrets secrets

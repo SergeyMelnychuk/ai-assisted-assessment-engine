@@ -1,0 +1,39 @@
+{
+  "domain": "observability",
+  "name": "questions.observability.baseline",
+  "description": "Baseline questions for logs, metrics, tracing, alerting, and incident response maturity.",
+  "questions": [
+    {
+      "text": "Where are application logs aggregated and searched?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Log aggregation maturity determines MTTD — the first minute of any incident response."
+    },
+    {
+      "text": "Which metrics platform tracks service-level indicators?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Metrics coverage tells us whether SLOs are achievable — or aspirational."
+    },
+    {
+      "text": "Is distributed tracing in production?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Yes, on all critical paths", "Partial coverage", "Dev-only", "No"],
+      "priority": "HIGH",
+      "rationale": "Tracing is indispensable for diagnosing latency and fan-out issues in distributed systems."
+    },
+    {
+      "text": "How are alerts routed and who holds the pager?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Clear on-call routing is the difference between a 15-minute incident and a multi-hour one."
+    },
+    {
+      "text": "Do you have runbooks for the top failure modes?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Yes, kept up to date", "Yes, but stale", "Ad-hoc / tribal knowledge", "No"],
+      "priority": "MEDIUM",
+      "rationale": "Runbook hygiene predicts both incident recovery time and on-boarding speed."
+    }
+  ]
+}

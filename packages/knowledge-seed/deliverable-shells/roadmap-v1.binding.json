@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "templateKind": "ROADMAP",
+  "notes": "Hand-authored workspace-default binding for the Roadmap v1 deck (6 slides: cover, phasing rationale, Phase 1, Phase 2, Phase 3, milestones & owners). The cover and phasing-rationale slides surface engine totals (effort hours, cost, scenario, assumptions) and engagement context. Per-phase scope on slides 3-5 is consultant-authored — the engine does not expose per-phase splits, so each phase slide carries a static 'Phase N: ' heading and a single empty body bullet for human fill. Milestones reuse the engine's recommendations bullet list as a starting point; the owner table is intentionally blank for the team to fill in. seed: {\"name\":\"Roadmap\",\"version\":\"v1\",\"kind\":\"ROADMAP\"}",
+  "entries": [
+    {
+      "field": "project.name",
+      "target": { "kind": "docx.placeholder", "token": "{{project_name}}" },
+      "format": "auto",
+      "note": "Cover hero + each phase slide heading."
+    },
+    {
+      "field": "project.industry",
+      "target": { "kind": "docx.placeholder", "token": "{{project_industry}}" },
+      "format": "auto",
+      "note": "Cover slide industry line."
+    },
+    {
+      "field": "engagement.name",
+      "target": { "kind": "docx.placeholder", "token": "{{engagement_name}}" },
+      "format": "auto",
+      "note": "Cover + phasing-rationale slide engagement label."
+    },
+    {
+      "field": "engagement.clientName",
+      "target": { "kind": "docx.placeholder", "token": "{{client_name}}" },
+      "format": "auto",
+      "note": "Cover client-name + phasing rationale client line."
+    },
+    {
+      "field": "totals.scenarioName",
+      "target": { "kind": "docx.placeholder", "token": "{{scenario_name}}" },
+      "format": "auto",
+      "note": "Cover slide scenario label."
+    },
+    {
+      "field": "totals.effortHoursLow",
+      "target": { "kind": "docx.placeholder", "token": "{{effort_hours_low}}" },
+      "format": "auto",
+      "note": "Engagement-level low effort hours — repeats on phasing rationale and each phase card."
+    },
+    {
+      "field": "totals.effortHoursHigh",
+      "target": { "kind": "docx.placeholder", "token": "{{effort_hours_high}}" },
+      "format": "auto",
+      "note": "Engagement-level high effort hours — repeats on phasing rationale and each phase card."
+    },
+    {
+      "field": "totals.costLow",
+      "target": { "kind": "docx.placeholder", "token": "{{cost_low}}" },
+      "format": "currency",
+      "note": "Engagement-level low cost — repeats on phasing rationale and each phase card."
+    },
+    {
+      "field": "totals.costHigh",
+      "target": { "kind": "docx.placeholder", "token": "{{cost_high}}" },
+      "format": "currency",
+      "note": "Engagement-level high cost — repeats on phasing rationale and each phase card."
+    },
+    {
+      "field": "totals.assumptions",
+      "target": { "kind": "docx.placeholder", "token": "{{totals_assumptions}}" },
+      "format": "auto",
+      "note": "Phasing-rationale assumptions block."
+    },
+    {
+      "field": "recommendations.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{recommendations_bullets}}" },
+      "format": "list",
+      "note": "Milestones & owners slide — recommended-milestones panel seeded from the engine's recommendations."
+    },
+    {
+      "field": "generated.date",
+      "target": { "kind": "docx.placeholder", "token": "{{generated_date}}" },
+      "format": "date",
+      "note": "Footer on every slide + cover generated-on line."
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "domain": "nfrs",
+  "name": "questions.nfrs.baseline",
+  "description": "Baseline questions for non-functional requirements: availability, performance, scale, DR.",
+  "questions": [
+    {
+      "text": "What is the required availability SLA (or target SLO) for the main workload?",
+      "type": "FREE_TEXT",
+      "priority": "CRITICAL",
+      "rationale": "Availability target drives topology cost, DR strategy, and operational staffing model."
+    },
+    {
+      "text": "What are the primary latency / throughput targets for critical user journeys?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Latency targets gate architectural decisions — caching, read-models, geographic distribution."
+    },
+    {
+      "text": "What scale is the system expected to handle (users, QPS, data volume)?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Scale ceiling steers technology choices and whether current baselines are 10× or 100× headroom."
+    },
+    {
+      "text": "What are the disaster recovery RPO and RTO targets?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "RPO/RTO drive backup strategy, multi-region requirements, and test rituals (game days)."
+    },
+    {
+      "text": "Are there data residency or regional-isolation requirements?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Residency constraints can invalidate default cloud service choices overnight."
+    }
+  ]
+}

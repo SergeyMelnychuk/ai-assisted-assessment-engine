@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "templateKind": "ESTIMATE",
+  "notes": "Hand-authored workspace-default binding for the Estimate Summary v1 workbook. seed: {\"name\":\"Estimate Summary\",\"version\":\"v1\",\"kind\":\"ESTIMATE\"}. Sponsor-friendly companion to the full WBS — three sheets (Cover for project + scenario + totals, Roles for one row per proposed role, Assumptions for a plain-text block). Bound cells carry the literal «bind» so reviewers can spot what the engine fills. Per-role rows iterate roles[*] via the shared groupKey 'roles' on the Roles sheet starting at A4 (header lives in row 3).",
+  "entries": [
+    {
+      "field": "project.name",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B5" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Project name."
+    },
+    {
+      "field": "project.industry",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B6" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Industry."
+    },
+    {
+      "field": "project.description",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B7" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Description."
+    },
+    {
+      "field": "engagement.clientName",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B8" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Client."
+    },
+    {
+      "field": "engagement.name",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B9" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Engagement."
+    },
+    {
+      "field": "totals.scenarioName",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B12" },
+      "format": "auto",
+      "note": "Cover > Scenario & totals > Scenario name."
+    },
+    {
+      "field": "totals.effortHoursLow",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B13" },
+      "format": "auto",
+      "note": "Cover > Scenario & totals > Effort hours (low)."
+    },
+    {
+      "field": "totals.effortHoursHigh",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B14" },
+      "format": "auto",
+      "note": "Cover > Scenario & totals > Effort hours (high)."
+    },
+    {
+      "field": "totals.costLow",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B15" },
+      "format": "currency",
+      "note": "Cover > Scenario & totals > Cost (low)."
+    },
+    {
+      "field": "totals.costHigh",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B16" },
+      "format": "currency",
+      "note": "Cover > Scenario & totals > Cost (high)."
+    },
+    {
+      "field": "totals.confidence",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B17" },
+      "format": "percent",
+      "note": "Cover > Scenario & totals > Confidence (formatted as percent)."
+    },
+    {
+      "field": "totals.currency",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B18" },
+      "format": "auto",
+      "note": "Cover > Scenario & totals > Currency code (e.g. USD)."
+    },
+    {
+      "field": "generated.date",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "B19" },
+      "format": "date",
+      "note": "Cover > Scenario & totals > Generated date."
+    },
+    {
+      "field": "totals.assumptions",
+      "target": { "kind": "xlsx.cell", "sheet": "Assumptions", "cell": "A4" },
+      "format": "auto",
+      "note": "Assumptions sheet > merged free-text block."
+    },
+    {
+      "field": "roles[*].roleName",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Roles", "startCell": "A4", "column": "A" },
+      "groupKey": "roles",
+      "format": "auto",
+      "note": "Roles table > Role column."
+    },
+    {
+      "field": "roles[*].seniority",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Roles", "startCell": "A4", "column": "B" },
+      "groupKey": "roles",
+      "format": "auto",
+      "note": "Roles table > Seniority column."
+    },
+    {
+      "field": "roles[*].count",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Roles", "startCell": "A4", "column": "C" },
+      "groupKey": "roles",
+      "format": "auto",
+      "note": "Roles table > Headcount column."
+    },
+    {
+      "field": "roles[*].hoursLow",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Roles", "startCell": "A4", "column": "D" },
+      "groupKey": "roles",
+      "format": "auto",
+      "note": "Roles table > Hours (low) column."
+    },
+    {
+      "field": "roles[*].hoursHigh",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Roles", "startCell": "A4", "column": "E" },
+      "groupKey": "roles",
+      "format": "auto",
+      "note": "Roles table > Hours (high) column."
+    },
+    {
+      "field": "roles[*].costLow",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Roles", "startCell": "A4", "column": "F" },
+      "groupKey": "roles",
+      "format": "currency",
+      "note": "Roles table > Cost (low) column."
+    },
+    {
+      "field": "roles[*].costHigh",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Roles", "startCell": "A4", "column": "G" },
+      "groupKey": "roles",
+      "format": "currency",
+      "note": "Roles table > Cost (high) column."
+    }
+  ]
+}

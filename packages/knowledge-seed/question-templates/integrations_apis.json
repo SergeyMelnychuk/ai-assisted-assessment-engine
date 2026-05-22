@@ -1,0 +1,39 @@
+{
+  "domain": "integrations_apis",
+  "name": "questions.integrations_apis.baseline",
+  "description": "Baseline questions for API surface, external integrations, and event delivery.",
+  "questions": [
+    {
+      "text": "What is the primary public API style?",
+      "type": "SINGLE_CHOICE",
+      "options": ["REST", "GraphQL", "gRPC", "Mixed", "No public API"],
+      "priority": "HIGH",
+      "rationale": "API style influences client SDKs, versioning strategy, and testing approach."
+    },
+    {
+      "text": "List the key external integrations (CRM, payments, analytics, etc.) and roughly how they're consumed.",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "External dependencies are a common source of latency, reliability, and compliance risk."
+    },
+    {
+      "text": "How are breaking API changes versioned and communicated?",
+      "type": "FREE_TEXT",
+      "priority": "MEDIUM",
+      "rationale": "Versioning maturity is a proxy for whether consumers can safely depend on the API."
+    },
+    {
+      "text": "Is there rate-limiting, quota, or circuit-breaker protection on external integrations?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Comprehensive", "Partial", "None", "Unsure"],
+      "priority": "MEDIUM",
+      "rationale": "Missing guards turn third-party outages into full-system outages."
+    },
+    {
+      "text": "How are asynchronous events / webhooks delivered (message bus, outbox, direct)?",
+      "type": "FREE_TEXT",
+      "priority": "MEDIUM",
+      "rationale": "Delivery guarantees determine data consistency risk across service boundaries."
+    }
+  ]
+}

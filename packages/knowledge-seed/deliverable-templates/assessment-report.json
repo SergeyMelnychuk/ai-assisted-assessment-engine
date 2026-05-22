@@ -1,0 +1,92 @@
+{
+  "key": "assessment_report",
+  "name": "Assessment Report",
+  "description": "Standard deliverable for existing-system, modernization, and audit assessments.",
+  "deliverableType": "ASSESSMENT_REPORT",
+  "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "AUDIT", "PRE_IMPLEMENTATION", "GREENFIELD"],
+  "sections": [
+    {
+      "key": "executive_summary",
+      "title": "Executive Summary",
+      "purpose": "One-page summary a sponsor can read in 2 minutes: headline findings, biggest risks, recommended next steps. No raw numbers unless they anchor a decision.",
+      "targetLength": "short",
+      "audience": "C-level sponsor"
+    },
+    {
+      "key": "engagement_context",
+      "title": "Engagement Context & Approach",
+      "purpose": "Why the engagement, what was in scope, what wasn't, what data sources and methods were used. Sets the frame for the rest of the document.",
+      "targetLength": "short",
+      "audience": "Sponsor + engineering leadership"
+    },
+    {
+      "key": "current_state",
+      "title": "Current State Overview",
+      "purpose": "Describe the system as observed — architecture style, major components, data flows, operational maturity. Reference the current-state system context diagram.",
+      "targetLength": "medium",
+      "audience": "Engineering leadership",
+      "includesDiagrams": ["current_state_system_context"]
+    },
+    {
+      "key": "key_findings",
+      "title": "Key Findings",
+      "purpose": "Top 5–10 findings surfaced by the analysis, grouped by domain. Each finding cites evidence and its severity. Prefer the highest-severity and highest-confidence items.",
+      "targetLength": "medium",
+      "audience": "Engineering leadership"
+    },
+    {
+      "key": "risks",
+      "title": "Risk Register",
+      "purpose": "Tabular summary of risks: title, impact, likelihood, severity, proposed mitigation, suggested owner. Prioritise CRITICAL + HIGH severity.",
+      "targetLength": "medium",
+      "audience": "Sponsor + engineering leadership"
+    },
+    {
+      "key": "target_state",
+      "title": "Target State Direction",
+      "purpose": "Short articulation of where the architecture should go — not a detailed design, just the direction, trade-offs, and why. Reference the target-state architecture diagram.",
+      "targetLength": "medium",
+      "audience": "Engineering leadership",
+      "includesDiagrams": ["target_state_architecture"]
+    },
+    {
+      "key": "recommendations",
+      "title": "Recommendations & Roadmap",
+      "purpose": "Prioritised recommendations with rough effort, grouped into near-term / mid-term / long-term. Tie each to the risk(s) it mitigates.",
+      "targetLength": "medium",
+      "audience": "Engineering leadership"
+    },
+    {
+      "key": "team_and_estimate",
+      "title": "Team Composition & Effort Estimate",
+      "purpose": "Proposed team shape with counts and seniority, effort range, cost range, and the key assumptions behind the numbers. Use the latest estimate.",
+      "targetLength": "medium",
+      "audience": "Sponsor"
+    },
+    {
+      "key": "assumptions_and_gaps",
+      "title": "Assumptions & Open Questions",
+      "purpose": "Assumptions the analysis relied on + the most important unanswered questions. Frame the gaps as prioritised items to close before implementation.",
+      "targetLength": "short",
+      "audience": "Engineering leadership"
+    }
+  ],
+  "diagrams": [
+    {
+      "key": "current_state_system_context",
+      "title": "Current-State System Context",
+      "diagramType": "SYSTEM_CONTEXT",
+      "outputFormat": "MERMAID",
+      "description": "High-level view of the current system: major components, external systems, and critical data flows.",
+      "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "AUDIT"]
+    },
+    {
+      "key": "target_state_architecture",
+      "title": "Target-State Architecture",
+      "diagramType": "CONTAINER",
+      "outputFormat": "MERMAID",
+      "description": "Proposed target architecture showing the shape the system should evolve toward, not a detailed design.",
+      "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "PRE_IMPLEMENTATION", "GREENFIELD"]
+    }
+  ]
+}

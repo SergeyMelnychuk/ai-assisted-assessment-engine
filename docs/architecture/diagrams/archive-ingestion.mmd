@@ -1,0 +1,39 @@
+%% Archive ingest fan-out (Week 5, ADR-0008).
+%% An uploaded zip/tar/tar.gz becomes a parent Document row. The
+%% ingest-archive worker stream-extracts members, applies safety
+%% gates, and fans out one child Document + ingest-document job per
+%% surviving entry. Children go through the standard Week 1 pipeline.
+
+flowchart TD
+    upload([POST /api/documents/upload]) -->|detectArchiveKind| isArch{zip / tar / tar.gz?}
+    isArch -- "no" --> regular[[standard single-file ingest]]
+    isArch -- "yes" --> parent[(Document — parent, PENDING)]
+    parent -->|enqueueIngestArchive| qArch{{"BullMQ: ingest-archive"}}
+
+    qArch --> stream[[Stream-extract from MinIO]]
+    stream --> gates{"Safety gates (ADR-0008)"}
+
+    gates -->|"entry-count > 10k"| failEntry[[ARCHIVE_ENTRY_LIMIT]]:::fail
+    gates -->|"uncompressed > 500 MB"| failSize[[ARCHIVE_SIZE_LIMIT]]:::fail
+    gates -->|"depth > 20"| failDepth[[ARCHIVE_DEPTH_LIMIT]]:::fail
+    gates -->|"symlink / abs path / .."| failSym[[ARCHIVE_SYMLINK]]:::fail
+    gates -->|"malformed archive"| failMal[[ARCHIVE_MALFORMED]]:::fail
+
+    failEntry --> parentFail[(Document — parent, FAILED)]
+    failSize --> parentFail
+    failDepth --> parentFail
+    failSym --> parentFail
+    failMal --> parentFail
+
+    gates -->|"pass & not ignored"| keep[["Write entry to MinIO<br/>archives/{parentId}/{path}"]]
+    gates -->|"default ignore list hit"| skip([Skip — node_modules, .git,<br/>*.lock, *.min.js, *.pyc, .env, …])
+    gates -->|".copilotignore match"| skip
+
+    keep --> child[(Document — child,<br/>parentDocumentId = parent.id)]
+    child -->|enqueueIngestDocument| qChild{{"BullMQ: ingest-document"}}
+    qChild --> childPipeline[[Standard Week 1 pipeline:<br/>extract → chunk → Evidence]]
+
+    childPipeline --> childReady[(Document — child, READY)]
+    childReady --> parentReady[(Document — parent, READY<br/>chunk_count = children kept)]
+
+    classDef fail fill:#f6dede,stroke:#a05050,color:#3a1010

@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "templateKind": "ESTIMATION",
+  "notes": "Hand-authored workspace-default binding for the WBS & Estimates v1.5 workbook. Targets the high-leverage cover/summary/headcount cells. Per-role tables iterate the engine roles[*] array via shared groupKey 'headcount' (Headcount and Cost sheet, starting row 18) and 'rates' (Rates sheet, starting row 9). Cells skipped: per-row WBS hours (engine doesn't expose User-Story granularity), Buffers/Maintenance/Internal-Cost/Monthly-Rollout per-row data, and BA/Arch/QA/DevOps/PM/UIUX per-discipline estimation tabs (no matching engine field yet).",
+  "entries": [
+    {
+      "field": "project.name",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C9" },
+      "format": "auto",
+      "note": "Scope > Products / project name on the cover sheet."
+    },
+    {
+      "field": "project.industry",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C10" },
+      "format": "auto",
+      "note": "Customers / customer categories row — closest match for industry."
+    },
+    {
+      "field": "project.description",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C16" },
+      "format": "auto",
+      "note": "Major features (epics) row — narrative description fits here."
+    },
+    {
+      "field": "project.businessGoals",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C13" },
+      "format": "auto",
+      "note": "Domain logic complexity row — repurposed for business goals."
+    },
+    {
+      "field": "project.expectedTimeline",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C22" },
+      "format": "auto",
+      "note": "Implementation duration row."
+    },
+    {
+      "field": "project.budgetSensitivity",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C24" },
+      "format": "auto",
+      "note": "Top 3 estimation risks — drives Apply Contingency decisions."
+    },
+    {
+      "field": "project.complianceRequirements",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C18" },
+      "format": "list",
+      "note": "Data residency / compliance row."
+    },
+    {
+      "field": "engagement.name",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C25" },
+      "format": "auto",
+      "note": "Known unknowns row — repurposed for engagement label."
+    },
+    {
+      "field": "engagement.clientName",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C11" },
+      "format": "auto",
+      "note": "User roles row — repurposed for client name on cover."
+    },
+    {
+      "field": "totals.scenarioName",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C12" },
+      "format": "auto",
+      "note": "Channels row — used for the scenario label."
+    },
+    {
+      "field": "totals.assumptions",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C23" },
+      "format": "auto",
+      "note": "Maintenance / run-rate row — assumptions land here."
+    },
+    {
+      "field": "totals.confidence",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C20" },
+      "format": "percent",
+      "note": "Availability target row — repurposed for confidence."
+    },
+    {
+      "field": "totals.currency",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C19" },
+      "format": "auto",
+      "note": "Expected load row — repurposed to record currency."
+    },
+    {
+      "field": "totals.effortHoursLow",
+      "target": { "kind": "xlsx.cell", "sheet": "Headcount and Cost", "cell": "B11" },
+      "format": "auto",
+      "note": "Project Summary > Total Hours (low estimate)."
+    },
+    {
+      "field": "totals.effortHoursHigh",
+      "target": { "kind": "xlsx.cell", "sheet": "Headcount and Cost", "cell": "C11" },
+      "format": "auto",
+      "note": "Total Hours (high estimate) — adjacent to low."
+    },
+    {
+      "field": "totals.costLow",
+      "target": { "kind": "xlsx.cell", "sheet": "Headcount and Cost", "cell": "B12" },
+      "format": "currency",
+      "note": "Project Summary > Total Cost (low)."
+    },
+    {
+      "field": "totals.costHigh",
+      "target": { "kind": "xlsx.cell", "sheet": "Headcount and Cost", "cell": "C12" },
+      "format": "currency",
+      "note": "Total Cost (high)."
+    },
+    {
+      "field": "assessment.findingsCount",
+      "target": { "kind": "xlsx.cell", "sheet": "Headcount and Cost", "cell": "B8" },
+      "format": "auto",
+      "note": "Peak Headcount slot — repurposed to surface findings count on the staffing sheet."
+    },
+    {
+      "field": "generated.date",
+      "target": { "kind": "xlsx.cell", "sheet": "Solution Context & Sizing", "cell": "C8" },
+      "format": "date",
+      "note": "Header row — generation date for the cover."
+    },
+    {
+      "field": "roles[*].roleName",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Headcount and Cost", "startCell": "A18", "column": "A" },
+      "groupKey": "headcount",
+      "format": "auto",
+      "note": "Resources table — Role column."
+    },
+    {
+      "field": "roles[*].count",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Headcount and Cost", "startCell": "A18", "column": "B" },
+      "groupKey": "headcount",
+      "format": "auto",
+      "note": "Resources table — Headcount column."
+    },
+    {
+      "field": "roles[*].seniority",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Headcount and Cost", "startCell": "A18", "column": "J" },
+      "groupKey": "headcount",
+      "format": "auto",
+      "note": "Resources table — Seniority column."
+    },
+    {
+      "field": "roles[*].hoursLow",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Headcount and Cost", "startCell": "A18", "column": "H" },
+      "groupKey": "headcount",
+      "format": "auto",
+      "note": "Resources table — Allocated Hours column (low)."
+    },
+    {
+      "field": "roles[*].costLow",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Headcount and Cost", "startCell": "A18", "column": "I" },
+      "groupKey": "headcount",
+      "format": "currency",
+      "note": "Resources table — Allocated Cost column (low)."
+    },
+    {
+      "field": "roles[*].roleName",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Rates", "startCell": "A9", "column": "A" },
+      "groupKey": "rates",
+      "format": "auto",
+      "note": "Rates sheet — Role column."
+    },
+    {
+      "field": "roles[*].seniority",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Rates", "startCell": "A9", "column": "B" },
+      "groupKey": "rates",
+      "format": "auto",
+      "note": "Rates sheet — Seniority column."
+    },
+    {
+      "field": "roles[*].hourlyRate",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Rates", "startCell": "A9", "column": "D" },
+      "groupKey": "rates",
+      "format": "currency",
+      "note": "Rates sheet — Rate $/h column."
+    }
+  ]
+}

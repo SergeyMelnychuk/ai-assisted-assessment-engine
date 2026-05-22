@@ -1,0 +1,59 @@
+{
+  "name": "Discovery Framework",
+  "description": "Framework for pre-implementation discovery and greenfield product shaping",
+  "version": 1,
+  "applicableTo": {
+    "assessmentTypes": ["discovery", "solution_shaping"],
+    "assessmentModes": ["GREENFIELD", "PRE_IMPLEMENTATION"]
+  },
+  "domains": [
+    {
+      "key": "business_context",
+      "name": "Business Context & Vision",
+      "description": "Product vision, business model, target market, success criteria",
+      "weight": 0.15
+    },
+    {
+      "key": "functional_scope",
+      "name": "Functional Scope & Capabilities",
+      "description": "Required capabilities, feature priority, MVP definition",
+      "weight": 0.2
+    },
+    {
+      "key": "architecture",
+      "name": "Architecture Direction",
+      "description": "Target architecture, technology choices, platform decisions",
+      "weight": 0.15
+    },
+    {
+      "key": "nfrs",
+      "name": "Non-Functional Requirements",
+      "description": "Performance, scalability, security, availability expectations",
+      "weight": 0.1
+    },
+    {
+      "key": "integrations_apis",
+      "name": "Integrations & External Dependencies",
+      "description": "Third-party services, APIs, data sources, legacy system interfaces",
+      "weight": 0.1
+    },
+    {
+      "key": "delivery_strategy",
+      "name": "Delivery Strategy",
+      "description": "Development approach, team structure, release strategy",
+      "weight": 0.1
+    },
+    {
+      "key": "cloud_infrastructure",
+      "name": "Cloud & Infrastructure",
+      "description": "Hosting strategy, cloud provider selection, infrastructure needs",
+      "weight": 0.1
+    },
+    {
+      "key": "risks_constraints",
+      "name": "Risks & Constraints",
+      "description": "Timeline constraints, budget limitations, team availability, compliance needs",
+      "weight": 0.1
+    }
+  ]
+}

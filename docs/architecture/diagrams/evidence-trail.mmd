@@ -1,0 +1,36 @@
+%% Mermaid flowchart — evidence traceability pipeline (ADR-0011) +
+%% citation surface (ADR-0028). Path from per-domain retrieval →
+%% persisted retrievedEvidenceIds → findingTrail API → reviewer UI
+%% with the EvidenceCitation component and context-window popup.
+
+flowchart LR
+    subgraph Analysis [run-analysis job]
+        Q[per-domain query<br/>scoring-criteria text] --> R[rag-retriever.retrieve<br/>cosine OR hybrid RRF — ADR-0027]
+        R -->|top-K chunks| C[AI router fan-out<br/>one call per domain — ADR-0002/0015]
+        C -->|raw JSON| P[insert Finding / Risk /<br/>Recommendation / DomainScore]
+        R -.->|retrievedEvidenceIds| P
+    end
+
+    P --> DB[("Postgres<br/>evidence_ids + retrieved_evidence_ids<br/>+ embedding + search_vec")]
+
+    subgraph Reviewer
+        U[Reviewer clicks<br/>Why this finding?] --> API[evidenceExplorer.findingTrail]
+        API --> DB
+        API --> PANEL["WhyThisFindingPanel<br/>cited + retrieved-only<br/>each row = EvidenceCitation (ADR-0028)"]
+        PANEL -->|click chunk body| CTX["EvidenceContextDialog<br/>contextWindow(evidenceId, ±2)<br/>chunk + neighbours"]
+        CTX --> DB
+    end
+
+    subgraph Search
+        S[Evidence Explorer<br/>free-text query] --> EMB[embed query]
+        EMB --> R2[rag-retriever.retrieve<br/>cosine OR hybrid RRF]
+        R2 --> CL["evidence-clusterer<br/>cosine >= 0.95 merge<br/>carries denseRank / lexicalRank"]
+        CL --> DB
+        CL --> LIST["Clustered results<br/>each card = EvidenceCitation<br/>matched: semantic/lexical/both chip"]
+        LIST -->|click chunk body| CTX
+    end
+
+    classDef persisted fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+    classDef reviewer fill:#fff4d6,stroke:#aa6500,color:#5a3800
+    class DB,P persisted
+    class PANEL,LIST,CTX reviewer

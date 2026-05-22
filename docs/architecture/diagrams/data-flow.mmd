@@ -1,0 +1,119 @@
+%% How evidence flows through the AI pipelines, from intake to export.
+%% Read top-to-bottom: each stage either adds a new artifact type to the
+%% Prisma graph or transforms existing rows into a new shape.
+
+flowchart TD
+    subgraph intake["1. Intake"]
+        eng[(Engagement)] --> asm[(Assessment)]
+        asm --> pc[(ProjectContext)]
+    end
+
+    subgraph ingest["2. Document, diagram & repo ingest (ADR-0001 decoupling; ADR-0003/0004/0005 embed; ADR-0008 archive; ADR-0009/0010 repo)"]
+        upload([Upload API route])
+        repoLink([repositoryLink.create])
+        upload -->|"S3 put + Document PENDING"| doc[(Document)]
+        upload -->|enqueue| q1{{"BullMQ: ingest-document"}}
+        upload -->|enqueue| q1b{{"BullMQ: ingest-diagram"}}
+        upload -->|"archive? enqueue"| q1c{{"BullMQ: ingest-archive"}}
+        repoLink -->|"PAT encrypted to AgentCredential vault<br/>(AES-256-GCM, ADR-0022)"| vault[("AgentCredential vault")]
+        repoLink -->|enqueue| q1d{{"BullMQ: ingest-repository"}}
+        q1d -->|"GitHub tarball API (ADR-0010)"| tarball[("MinIO tarball<br/>repo-archives/{linkId}/{sha}.tar.gz")]
+        tarball -->|"parent Document → archive pipeline"| q1c
+        q1c -->|"stream-extract + safety gates<br/>(ADR-0008)"| docChild[(Document — child<br/>parentDocumentId = archive.id)]
+        docChild -->|fan-out| q1
+        q1 -->|pdf-parse / mammoth| text1[/extracted text/]
+        text1 -->|"recursive chunker<br/>~800 tok / ~100 overlap"| chunks1[/chunks + content_sha/]
+        chunks1 -->|"OpenAI text-embedding-3-small<br/>(batched, no retries)"| vec1[/1536-dim vectors/]
+        vec1 --> ev[("Evidence — 1 per chunk<br/>embedding + search_vec (tsvector, ADR-0027)<br/>+ chunk_index + chunk_source<br/>+ domain (ADR-0024)")]
+        q1b -->|"text parser: Mermaid / PlantUML / Structurizr source → chunk → embed"| ev
+        q1b -->|"Claude vision via AI router (image diagrams only)"| diag[(Diagram rows — INGESTED)]
+        idx[("HNSW cosine index on embedding<br/>GIN index on search_vec<br/>ADR-0005 / 0027")]:::infra
+        ev -.backs.- idx
+    end
+
+    subgraph qna["3. Adaptive Q&A"]
+        templates["question-templates/*.json"]:::seed
+        templates -->|"seed baseline"| q[(Question)]
+        q -->|"review.perform<br/>or question.answer"| ans[(Answer)]
+        ans -->|"enqueue + debounce 1.5s"| q2{{"BullMQ: generate-follow-ups"}}
+        q2 --> claude2[["Claude"]]
+        claude2 --> q
+    end
+
+    subgraph analysis["4. Analysis (per-domain fan-out — ADR-0002; verifier pass — ADR-0013)"]
+        risks["risk-patterns/*.json"]:::seed
+        frameworks["frameworks/*.json (rubric)"]:::seed
+        trigger1(["analysis.run<br/>(FAST or THOROUGH)"]) -->|enqueue| q3{{"BullMQ: run-analysis"}}
+        q3 --> claude3[["Synthesis — one router call per active domain<br/>(analysis.synthesis task)"]]
+        claude3 --> f[(Finding)]
+        claude3 --> r[(Risk)]
+        claude3 --> rec[(Recommendation)]
+        claude3 --> ass[(Assumption)]
+        claude3 -.THOROUGH only.-> verifier[["Per-domain verifier pass<br/>(analysis.verifier task — ADR-0013)"]]
+        verifier --> f
+        verifier --> r
+        verifier --> rec
+        claude3 -.pass 2.-> claude4[["Rubric-anchored scoring<br/>(analysis.scoring task)"]]
+        claude4 --> ds[(DomainScore — 1 per active domain)]
+        ev --> claude3
+        ans --> claude3
+        risks --> claude3
+        frameworks --> claude4
+    end
+
+    subgraph estim["5. Team + estimate"]
+        roles["role-catalog/standard-roles.json"]:::seed
+        rc["rate-cards/default-rate-card.json"]:::seed
+        trigger2([estimation.run]) -->|enqueue| q4{{"BullMQ: run-estimation"}}
+        q4 --> claude5[["Claude — team proposal from role-catalog menu"]]
+        claude5 --> rp[(RoleProposal)]
+        claude5 -->|"hours × count × rate"| est[(Estimate + roleAllocations JSON)]
+        roles --> claude5
+        rc --> est
+    end
+
+    subgraph deliver["6. Deliverable"]
+        tmpl["deliverable-templates/assessment-report.json"]:::seed
+        trigger3([deliverable.generate]) -->|enqueue| q5{{"BullMQ: generate-deliverable"}}
+        q5 --> claude6[["Claude — N diagram calls (source code only)"]]
+        q5 --> claude7[["Claude — 1 batched sections call"]]
+        claude6 --> diag2[(Diagram — GENERATED, deliverableId linked)]
+        claude7 --> sec[(DeliverableSection)]
+        tmpl --> q5
+        f --> claude7
+        r --> claude7
+        rec --> claude7
+        ds --> claude7
+        rp --> claude7
+        est --> claude7
+    end
+
+    subgraph review["7. Review"]
+        sec --> rev[(Review — audit trail, content diff on EDIT)]
+        rev -->|"review.approveDeliverable"| delApp[[Deliverable status: APPROVED]]
+    end
+
+    subgraph export["8. Export"]
+        delApp --> ex([export.listByAssessment])
+        ex -->|"GET /api/deliverables/:id/export"| build[[Build DOCX: cover, TOC,<br/>watermark drafts, embed PNGs]]
+        build -->|"status flip APPROVED → EXPORTED"| delExp[[Deliverable status: EXPORTED]]
+    end
+
+    %% Cost-audit sidecar (Phase 3 Week 8, ADR-0012, multi-provider — ADR-0015) —
+    %% every AI call through the router writes one `AuditLog.AI_CALL` row with
+    %% input/output tokens, cacheRead/cacheWrite tokens (when prompt caching is
+    %% on for that task), and estimatedCostUsd. The `/admin/cost` rollup reads
+    %% those rows. Shown as a sidecar so the main flow stays readable.
+    cost[("AuditLog.AI_CALL<br/>tokens + cacheRead/cacheWrite<br/>+ estimatedCostUsd<br/>ADR-0012 / 0015")]:::audit
+    claude2 -.audit.-> cost
+    claude3 -.audit.-> cost
+    verifier -.audit.-> cost
+    claude4 -.audit.-> cost
+    claude5 -.audit.-> cost
+    claude6 -.audit.-> cost
+    claude7 -.audit.-> cost
+    vec1 -.audit.-> cost
+
+    classDef seed fill:#f4f0e8,stroke:#a88e60,color:#3a2a10
+    classDef infra fill:#e7eef7,stroke:#4a6590,color:#122033
+    classDef audit fill:#f7ecec,stroke:#a05050,color:#33121c

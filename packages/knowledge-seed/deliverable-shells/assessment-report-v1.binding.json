@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "templateKind": "ASSESSMENT_REPORT",
+  "notes": "Workspace-default binding for the Assessment Report v1 Word shell. The shell carries 10 sections (cover, executive summary, engagement context, current state, findings, risks, recommendations, target state, roadmap, assumptions, appendix). Each section opens with a heading + framing paragraph and embeds {{token}} placeholders for the engine fields. Tokens are typed once each in the document body; some tokens (project_name, scenario_name, generated_date, *_count) are reused across sections — the docx filler does global string replace so a single binding entry per token is enough. seed: {\"name\":\"Assessment Report\",\"version\":\"v1\",\"kind\":\"ASSESSMENT_REPORT\"}",
+  "entries": [
+    {
+      "field": "project.name",
+      "target": { "kind": "docx.placeholder", "token": "{{project_name}}" },
+      "format": "auto",
+      "note": "Cover + Engagement context; reused on the project line on every section that needs it."
+    },
+    {
+      "field": "project.industry",
+      "target": { "kind": "docx.placeholder", "token": "{{project_industry}}" },
+      "format": "auto",
+      "note": "Engagement context section."
+    },
+    {
+      "field": "project.description",
+      "target": { "kind": "docx.placeholder", "token": "{{project_description}}" },
+      "format": "auto",
+      "note": "Engagement context > Project description paragraph."
+    },
+    {
+      "field": "project.businessGoals",
+      "target": { "kind": "docx.placeholder", "token": "{{project_business_goals}}" },
+      "format": "auto",
+      "note": "Engagement context > Business goals paragraph."
+    },
+    {
+      "field": "project.expectedTimeline",
+      "target": { "kind": "docx.placeholder", "token": "{{project_timeline}}" },
+      "format": "auto",
+      "note": "Engagement context + Roadmap sections."
+    },
+    {
+      "field": "engagement.name",
+      "target": { "kind": "docx.placeholder", "token": "{{engagement_name}}" },
+      "format": "auto",
+      "note": "Cover + Engagement context — engagement label."
+    },
+    {
+      "field": "engagement.clientName",
+      "target": { "kind": "docx.placeholder", "token": "{{client_name}}" },
+      "format": "auto",
+      "note": "Cover (Prepared for) + Engagement context."
+    },
+    {
+      "field": "totals.scenarioName",
+      "target": { "kind": "docx.placeholder", "token": "{{scenario_name}}" },
+      "format": "auto",
+      "note": "Executive summary, Roadmap, Appendix — scenario label."
+    },
+    {
+      "field": "totals.effortHoursLow",
+      "target": { "kind": "docx.placeholder", "token": "{{effort_hours_low}}" },
+      "format": "auto",
+      "note": "Executive summary headline figure."
+    },
+    {
+      "field": "totals.effortHoursHigh",
+      "target": { "kind": "docx.placeholder", "token": "{{effort_hours_high}}" },
+      "format": "auto",
+      "note": "Executive summary headline figure."
+    },
+    {
+      "field": "totals.costLow",
+      "target": { "kind": "docx.placeholder", "token": "{{cost_low}}" },
+      "format": "currency",
+      "note": "Executive summary headline figure."
+    },
+    {
+      "field": "totals.costHigh",
+      "target": { "kind": "docx.placeholder", "token": "{{cost_high}}" },
+      "format": "currency",
+      "note": "Executive summary headline figure."
+    },
+    {
+      "field": "totals.confidence",
+      "target": { "kind": "docx.placeholder", "token": "{{confidence}}" },
+      "format": "percent",
+      "note": "Executive summary + Appendix — model confidence."
+    },
+    {
+      "field": "totals.assumptions",
+      "target": { "kind": "docx.placeholder", "token": "{{assumptions}}" },
+      "format": "auto",
+      "note": "Assumptions section body paragraph."
+    },
+    {
+      "field": "totals.currency",
+      "target": { "kind": "docx.placeholder", "token": "{{currency}}" },
+      "format": "auto",
+      "note": "Executive summary + Appendix — currency code."
+    },
+    {
+      "field": "findings.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{findings_bullets}}" },
+      "format": "list",
+      "note": "Findings section — pre-formatted multi-line bullet list from the engine."
+    },
+    {
+      "field": "risks.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{risks_bullets}}" },
+      "format": "list",
+      "note": "Risks section — pre-formatted multi-line bullet list from the engine."
+    },
+    {
+      "field": "recommendations.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{recommendations_bullets}}" },
+      "format": "list",
+      "note": "Recommendations section — pre-formatted multi-line bullet list from the engine."
+    },
+    {
+      "field": "assessment.findingsCount",
+      "target": { "kind": "docx.placeholder", "token": "{{findings_count}}" },
+      "format": "auto",
+      "note": "Executive summary, Findings header, Appendix counts."
+    },
+    {
+      "field": "assessment.risksCount",
+      "target": { "kind": "docx.placeholder", "token": "{{risks_count}}" },
+      "format": "auto",
+      "note": "Executive summary, Risks header, Appendix counts."
+    },
+    {
+      "field": "assessment.recommendationsCount",
+      "target": { "kind": "docx.placeholder", "token": "{{recommendations_count}}" },
+      "format": "auto",
+      "note": "Executive summary, Recommendations header, Appendix counts."
+    },
+    {
+      "field": "generated.date",
+      "target": { "kind": "docx.placeholder", "token": "{{generated_date}}" },
+      "format": "date",
+      "note": "Cover + Appendix — generation date."
+    }
+  ]
+}

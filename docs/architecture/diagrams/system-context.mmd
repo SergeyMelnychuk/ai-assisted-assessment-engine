@@ -1,0 +1,24 @@
+%% Mermaid C4 system-context view — Assessment Co-Pilot
+%% Paste into mermaid.live or render via any Mermaid-capable renderer.
+
+C4Context
+    title System Context — Assessment Co-Pilot
+
+    Person(consultant, "Consultant / Assessor", "Runs assessments, uploads documents, answers intake questions.")
+    Person(reviewer, "Reviewer / Architect", "Approves or rejects AI drafts, signs off deliverables.")
+    Person(admin, "Admin", "Manages users; audits KB and rate cards.")
+
+    System(copilot, "Assessment Co-Pilot", "Standardises and drafts consulting assessments end-to-end; keeps experts accountable for approval.")
+
+    System_Ext(claude, "Anthropic Claude", "Primary LLM provider for analysis, planning, deliverables, vision (multi-provider router — ADR-0015).")
+    System_Ext(openai, "OpenAI", "Embeddings for RAG retrieval (text-embedding-3-small, 1536-dim — ADR-0003).")
+    System_Ext(github, "GitHub", "Repository tarball downloads for repo-link evidence (PAT-authenticated, ADR-0010).")
+
+    Rel(consultant, copilot, "Runs assessments", "HTTPS")
+    Rel(reviewer, copilot, "Reviews + approves", "HTTPS")
+    Rel(admin, copilot, "Administers", "HTTPS")
+    Rel(copilot, claude, "Prompts + JSON responses, vision for raster diagrams", "HTTPS")
+    Rel(copilot, openai, "Embed text chunks + queries", "HTTPS")
+    Rel(copilot, github, "Fetch repo tarballs via PAT", "HTTPS")
+
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")

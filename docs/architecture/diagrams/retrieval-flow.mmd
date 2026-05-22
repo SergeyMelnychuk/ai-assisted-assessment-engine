@@ -1,0 +1,30 @@
+%% Retrieval flow — Phase 3 Week 4 (ADR-0006, ADR-0007) + hybrid retrieval (ADR-0027).
+%% Query → embed → cosine OR cosine+lexical (RRF) → domain filter → widen-not-pad fallback → AI router.
+flowchart TD
+    Caller["AI call site<br/>(analysis / scoring / deliverable / follow-ups / agent)"]
+    QueryPick["Build query string<br/>(per ADR-0007 matrix)"]
+    Embed["embedding-service.embed()<br/>text-embedding-3-small, 1536-dim"]
+    FlagCheck{"features.hybridRetrieval<br/>ON?"}
+    Cosine["Cosine-only path:<br/>ORDER BY embedding &lt;=&gt; $query<br/>LIMIT topK"]
+    Hybrid["Hybrid CTE (ADR-0027):<br/>dense (cosine) + lex (tsvector)<br/>fused by RRF k=60"]
+    DomainFilter{"domain set?"}
+    Underfill{"fewer than topK,<br/>or &lt; max(5, topK/2)<br/>above minSimilarity?"}
+    Widen["Re-run without domain filter<br/>(cosine path only — hybrid skips widen)"]
+    Merge["Merge preserving order,<br/>de-dup by evidenceId,<br/>apply minSimilarity floor"]
+    Results["ChunkResult[]<br/>{evidenceId, content, similarity,<br/> chunkIndex, chunkSource, sourceDocumentId,<br/> domain?, rrfScore?, denseRank?, lexicalRank?}"]
+    Prompt["Build prompt<br/>inline retrieved chunks"]
+    Router["AI router (ADR-0015)<br/>callAi(task, ...)<br/>primary + fallback per task"]
+
+    Caller --> QueryPick --> Embed --> FlagCheck
+    FlagCheck -- off --> Cosine --> DomainFilter
+    FlagCheck -- on --> Hybrid --> DomainFilter
+    DomainFilter -- no --> Merge
+    DomainFilter -- yes --> Underfill
+    Underfill -- no --> Merge
+    Underfill -- yes --> Widen --> Merge
+    Merge --> Results --> Prompt --> Router
+
+    classDef rag fill:#e6f4ff,stroke:#1f5aa6,color:#0d2d4f;
+    classDef ai fill:#fff4d6,stroke:#aa6500,color:#5a3800;
+    class Embed,Cosine,Hybrid,Widen,Merge,Results rag;
+    class Router,Prompt ai;

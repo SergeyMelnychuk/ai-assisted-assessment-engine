@@ -1,0 +1,53 @@
+{
+  "domain": "architecture",
+  "name": "questions.architecture.baseline",
+  "description": "Baseline intake questions for software architecture style, documentation, and evolution strategy.",
+  "questions": [
+    {
+      "text": "Which best describes the current architectural style?",
+      "type": "SINGLE_CHOICE",
+      "options": [
+        "Monolith (single deployable)",
+        "Modular monolith",
+        "Microservices",
+        "Serverless / FaaS",
+        "Event-driven / streaming-first",
+        "Hybrid / mixed",
+        "Not yet decided (greenfield)"
+      ],
+      "priority": "CRITICAL",
+      "rationale": "Style drives nearly every other assessment axis — team topology, data boundaries, deployment model."
+    },
+    {
+      "text": "What are the main bounded contexts or top-level services?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Lists the units of change; frames the evidence needed for domain boundaries and integration risks."
+    },
+    {
+      "text": "Is there a documented architecture decision record (ADR) practice?",
+      "type": "SINGLE_CHOICE",
+      "options": ["Yes, active ADRs in version control", "Partial / inconsistent", "No", "Unsure"],
+      "priority": "MEDIUM",
+      "rationale": "ADR maturity is a strong proxy for design discipline and change governance."
+    },
+    {
+      "text": "What is the dominant language and framework combination?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Skill-set and hiring pool map directly to language choice; influences team proposals later."
+    },
+    {
+      "text": "What are the highest-traffic or most business-critical flows end-to-end?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Focus area for performance, reliability, and observability assessment depth."
+    },
+    {
+      "text": "Are there known architectural debt items the team is already tracking?",
+      "type": "FREE_TEXT",
+      "priority": "HIGH",
+      "rationale": "Pre-known debt lets us confirm/deepen rather than re-discover — saves engagement hours."
+    }
+  ]
+}

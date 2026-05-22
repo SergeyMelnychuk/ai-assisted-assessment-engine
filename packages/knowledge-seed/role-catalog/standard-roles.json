@@ -1,0 +1,175 @@
+{
+  "name": "Standard Role Catalog",
+  "description": "Common roles for software delivery and consulting engagements",
+  "version": 1,
+  "roles": [
+    {
+      "key": "solution_architect",
+      "name": "Solution Architect",
+      "seniorityRange": ["SENIOR", "LEAD", "PRINCIPAL"],
+      "description": "Defines overall architecture direction, makes key technology decisions, ensures alignment with business goals",
+      "typicalResponsibilities": [
+        "Architecture design and documentation",
+        "Technology selection and evaluation",
+        "Architecture review and governance",
+        "NFR definition and validation",
+        "Integration architecture"
+      ],
+      "whenNeeded": "Always needed for any non-trivial project"
+    },
+    {
+      "key": "tech_lead",
+      "name": "Technical Lead",
+      "seniorityRange": ["SENIOR", "LEAD"],
+      "description": "Leads the development team technically, ensures code quality and technical standards",
+      "typicalResponsibilities": [
+        "Technical leadership and mentoring",
+        "Code review and quality standards",
+        "Sprint planning and technical estimation",
+        "Technical decision-making",
+        "Development process optimization"
+      ],
+      "whenNeeded": "Needed for teams of 3+ developers"
+    },
+    {
+      "key": "backend_developer",
+      "name": "Backend Developer",
+      "seniorityRange": ["MID", "SENIOR"],
+      "description": "Implements server-side logic, APIs, data processing, and integrations",
+      "typicalResponsibilities": [
+        "API development",
+        "Business logic implementation",
+        "Database design and queries",
+        "Integration development",
+        "Unit and integration testing"
+      ],
+      "whenNeeded": "Core role for any project with server-side components"
+    },
+    {
+      "key": "frontend_developer",
+      "name": "Frontend Developer",
+      "seniorityRange": ["MID", "SENIOR"],
+      "description": "Implements user interfaces, client-side logic, and user experience",
+      "typicalResponsibilities": [
+        "UI component development",
+        "Client-side state management",
+        "API integration",
+        "Responsive design",
+        "Frontend testing"
+      ],
+      "whenNeeded": "Needed for any project with a web or mobile UI"
+    },
+    {
+      "key": "devops_engineer",
+      "name": "DevOps / Platform Engineer",
+      "seniorityRange": ["MID", "SENIOR", "LEAD"],
+      "description": "Manages infrastructure, CI/CD pipelines, cloud environments, and operational tooling",
+      "typicalResponsibilities": [
+        "CI/CD pipeline design and maintenance",
+        "Infrastructure-as-code",
+        "Cloud environment management",
+        "Monitoring and alerting setup",
+        "Security hardening"
+      ],
+      "whenNeeded": "Needed for projects with cloud infrastructure or CI/CD requirements"
+    },
+    {
+      "key": "qa_engineer",
+      "name": "QA Engineer",
+      "seniorityRange": ["MID", "SENIOR"],
+      "description": "Designs and executes test strategy, builds test automation, ensures quality",
+      "typicalResponsibilities": [
+        "Test strategy design",
+        "Test automation development",
+        "Manual testing where needed",
+        "Performance testing",
+        "Quality reporting"
+      ],
+      "whenNeeded": "Needed for projects requiring structured quality assurance"
+    },
+    {
+      "key": "business_analyst",
+      "name": "Business Analyst",
+      "seniorityRange": ["MID", "SENIOR"],
+      "description": "Bridges business and technical teams, manages requirements, ensures alignment",
+      "typicalResponsibilities": [
+        "Requirements gathering and analysis",
+        "User story writing",
+        "Acceptance criteria definition",
+        "Stakeholder communication",
+        "Process documentation"
+      ],
+      "whenNeeded": "Needed for projects with complex business domains or unclear requirements"
+    },
+    {
+      "key": "project_manager",
+      "name": "Project Manager / Delivery Manager",
+      "seniorityRange": ["SENIOR", "LEAD"],
+      "description": "Manages project delivery, timelines, risks, and stakeholder communication",
+      "typicalResponsibilities": [
+        "Project planning and tracking",
+        "Risk management",
+        "Stakeholder communication",
+        "Team coordination",
+        "Budget and timeline management"
+      ],
+      "whenNeeded": "Needed for projects with formal delivery governance"
+    },
+    {
+      "key": "security_specialist",
+      "name": "Security Specialist",
+      "seniorityRange": ["SENIOR", "LEAD"],
+      "description": "Ensures security best practices, conducts security reviews, manages compliance",
+      "typicalResponsibilities": [
+        "Security architecture review",
+        "Threat modeling",
+        "Security testing guidance",
+        "Compliance assessment",
+        "Security policy definition"
+      ],
+      "whenNeeded": "Needed for projects with security/compliance requirements"
+    },
+    {
+      "key": "data_engineer",
+      "name": "Data Engineer",
+      "seniorityRange": ["MID", "SENIOR"],
+      "description": "Designs data pipelines, manages data infrastructure, ensures data quality",
+      "typicalResponsibilities": [
+        "Data pipeline development",
+        "ETL/ELT design",
+        "Data modeling",
+        "Data quality management",
+        "Analytics infrastructure"
+      ],
+      "whenNeeded": "Needed for projects with significant data processing needs"
+    },
+    {
+      "key": "ux_designer",
+      "name": "UX/UI Designer",
+      "seniorityRange": ["MID", "SENIOR"],
+      "description": "Designs user experience and interface for digital products",
+      "typicalResponsibilities": [
+        "User research",
+        "Wireframing and prototyping",
+        "Visual design",
+        "Design system management",
+        "Usability testing"
+      ],
+      "whenNeeded": "Needed for user-facing products"
+    },
+    {
+      "key": "scrum_master",
+      "name": "Scrum Master / Agile Coach",
+      "seniorityRange": ["MID", "SENIOR"],
+      "description": "Facilitates agile ceremonies, removes impediments, coaches team on practices",
+      "typicalResponsibilities": [
+        "Sprint facilitation",
+        "Impediment removal",
+        "Process improvement",
+        "Team coaching",
+        "Metrics and retrospectives"
+      ],
+      "whenNeeded": "Needed for teams following agile methodology"
+    }
+  ]
+}

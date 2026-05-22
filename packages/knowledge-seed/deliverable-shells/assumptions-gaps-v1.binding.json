@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "templateKind": "ASSUMPTIONS_GAPS",
+  "notes": "Hand-authored workspace-default binding for the Assumptions & Gaps v1 docx shell. seed: {\"name\":\"Assumptions & Gaps\",\"version\":\"v1\",\"kind\":\"ASSUMPTIONS_GAPS\"}. The Assumptions & Gaps deliverable is mostly a human-authored artefact: open questions, dependencies, and the gap-by-gap narrative are too engagement-specific for the engine to invent. The engine sticks to project / engagement / scenario metadata on the cover, drops the estimation engine's `totals.assumptions` text into Section 1, frames Section 4 with the live findings/risks/recommendations counts so the reviewer can see how thin the evidence base still is, and seeds Section 5 with the `recommendations.bulletList` excerpt. Everything else (open questions, dependency list, gap narrative, next-activity schedule) stays as bracketed prompts for the human author to fill in.",
+  "entries": [
+    {
+      "field": "project.name",
+      "target": { "kind": "docx.placeholder", "token": "{{project_name}}" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Project name."
+    },
+    {
+      "field": "project.industry",
+      "target": { "kind": "docx.placeholder", "token": "{{project_industry}}" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Industry."
+    },
+    {
+      "field": "project.description",
+      "target": { "kind": "docx.placeholder", "token": "{{project_description}}" },
+      "format": "auto",
+      "note": "Cover > Project description paragraph."
+    },
+    {
+      "field": "engagement.clientName",
+      "target": { "kind": "docx.placeholder", "token": "{{client_name}}" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Client."
+    },
+    {
+      "field": "engagement.name",
+      "target": { "kind": "docx.placeholder", "token": "{{engagement_name}}" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Engagement."
+    },
+    {
+      "field": "totals.scenarioName",
+      "target": { "kind": "docx.placeholder", "token": "{{scenario_name}}" },
+      "format": "auto",
+      "note": "Cover > Project metadata > Scenario name from the latest estimate."
+    },
+    {
+      "field": "totals.assumptions",
+      "target": { "kind": "docx.placeholder", "token": "{{totals_assumptions}}" },
+      "format": "auto",
+      "note": "Section 1 > Key assumptions — engine's assumptions text from the chosen scenario."
+    },
+    {
+      "field": "assessment.findingsCount",
+      "target": { "kind": "docx.placeholder", "token": "{{findings_count}}" },
+      "format": "auto",
+      "note": "Section 4 > Gaps in evidence > Findings recorded so far."
+    },
+    {
+      "field": "assessment.risksCount",
+      "target": { "kind": "docx.placeholder", "token": "{{risks_count}}" },
+      "format": "auto",
+      "note": "Section 4 > Gaps in evidence > Risks identified."
+    },
+    {
+      "field": "assessment.recommendationsCount",
+      "target": { "kind": "docx.placeholder", "token": "{{recommendations_count}}" },
+      "format": "auto",
+      "note": "Section 4 > Gaps in evidence > Recommendations drafted."
+    },
+    {
+      "field": "recommendations.bulletList",
+      "target": { "kind": "docx.placeholder", "token": "{{recommendations_bullets}}" },
+      "format": "auto",
+      "note": "Section 5 > Recommended next discovery activities — engine's recommendations bullet list."
+    },
+    {
+      "field": "generated.date",
+      "target": { "kind": "docx.placeholder", "token": "{{generated_date}}" },
+      "format": "date",
+      "note": "Cover > Project metadata > Generation date."
+    }
+  ]
+}
