@@ -175,6 +175,8 @@ The README is the entry point. The deep references:
 - `docs/architecture/README.md` — full technical architecture rationale.
 - `docs/architecture/decisions/` — numbered ADRs (0001–0028), immutable once accepted. Read these before changing the things they describe (ingest decoupling, RAG, archive gates, PAT encryption, evidence trail, prompt caching, agent harness, multi-provider routing, template binding, background-job lifecycle, soft-failure, workflow planner, credential vault, DB-backed feature flags, per-domain tagging, engagement deletion + MinIO sweep, agent trace viewer, hybrid retrieval, evidence citations).
 - `docs/guides/running-locally.md` — environment, ports, services.
+- `docs/guides/engagements.md` — consultant-facing engagement handbook: create flow, workspace tabs, members/access, status lifecycle, archive vs delete.
+- `docs/guides/knowledge-base.md` — human-readable KB guide: artifact families, per-assessment question selection, what feeds AI vs what fills output containers, edit workflow.
 - `docs/guides/templates.md` — customer-uploadable templates user guide.
 - `docs/guides/troubleshooting.md` — dev-loop symptom index.
 - `docs/operations/troubleshooting.md` — production-shaped failures.

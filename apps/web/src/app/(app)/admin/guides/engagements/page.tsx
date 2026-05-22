@@ -5,34 +5,25 @@ import { ChevronLeft } from "lucide-react";
 import { GuideMarkdown } from "@/components/admin/guide/guide-markdown";
 
 /**
- * AI Router guide — end-to-end operator manual.
+ * Engagements guide — consultant-facing handbook.
  *
- * The source of truth is `docs/guides/admin-ai-router.md` in the repo.
- * At request time we:
- *   1. Try to fetch it from GitHub raw so the deployed app shows the
- *      latest merged guide without a redeploy (docs-only updates ship
- *      as merges, not releases).
- *   2. Fall back to the file bundled with the deploy if the fetch
- *      fails (no network, private repo without token, rate limit).
- *      This keeps the page working in local dev and in air-gapped
- *      environments where raw.githubusercontent.com is unreachable.
+ * Same loading pattern as the other admin guides:
+ *   1. Fetch `docs/guides/engagements.md` from GitHub raw so docs-only
+ *      edits propagate without a redeploy.
+ *   2. Fall back to the file bundled with the deploy when raw is
+ *      unreachable (local dev, air-gapped, rate limit).
  *
- * `DOCS_GITHUB_RAW_URL` lets staging point at a branch other than the
- * default when docs changes need to be previewed before merge. Shape:
- *   https://raw.githubusercontent.com/<owner>/<repo>/<ref>/docs/guides/admin-ai-router.md
+ * `DOCS_GITHUB_RAW_URL_ENGAGEMENTS` overrides the source URL.
  */
 
 const DEFAULT_RAW_URL =
-  "https://raw.githubusercontent.com/SergeyMelnychuk/ai-assisted-assessment-engine/main/docs/guides/admin-ai-router.md";
+  "https://raw.githubusercontent.com/SergeyMelnychuk/ai-assisted-assessment-engine/main/docs/guides/engagements.md";
 
-// Docs change independently of the build — don't let Next cache them
-// indefinitely. 5 min is a reasonable middle ground: fresh enough for
-// an operator who just merged a doc fix, slow enough that the raw URL
-// doesn't get hammered on every admin page view.
 export const revalidate = 300;
 
 async function loadGuide(): Promise<{ source: "github" | "local"; body: string }> {
-  const url = process.env.DOCS_GITHUB_RAW_URL ?? DEFAULT_RAW_URL;
+  const url =
+    process.env.DOCS_GITHUB_RAW_URL_ENGAGEMENTS ?? DEFAULT_RAW_URL;
   try {
     const res = await fetch(url, { next: { revalidate } });
     if (res.ok) {
@@ -44,17 +35,15 @@ async function loadGuide(): Promise<{ source: "github" | "local"; body: string }
   } catch {
     // fall through to local
   }
-  // Local fallback: read the bundled copy. `process.cwd()` is the web
-  // app root (`apps/web`) in both `next dev` and `next start`.
   const localPath = path.resolve(
     process.cwd(),
-    "../../docs/guides/admin-ai-router.md",
+    "../../docs/guides/engagements.md",
   );
   const body = await readFile(localPath, "utf8");
   return { source: "local", body };
 }
 
-export default async function AiRouterGuidePage() {
+export default async function EngagementsGuidePage() {
   let loaded: { source: "github" | "local"; body: string };
   let loadError: string | null = null;
   try {
@@ -63,9 +52,10 @@ export default async function AiRouterGuidePage() {
     loaded = {
       source: "local",
       body:
-        "# Guide unavailable\n\nCould not load the admin guide from GitHub " +
-        "or the bundled fallback. Please check `DOCS_GITHUB_RAW_URL` or " +
-        "the `docs/guides/admin-ai-router.md` file in the repo.\n",
+        "# Guide unavailable\n\nCould not load the Engagements guide from " +
+        "GitHub or the bundled fallback. Please check " +
+        "`DOCS_GITHUB_RAW_URL_ENGAGEMENTS` or the " +
+        "`docs/guides/engagements.md` file in the repo.\n",
     };
     loadError = err instanceof Error ? err.message : String(err);
   }
@@ -81,7 +71,7 @@ export default async function AiRouterGuidePage() {
           All guides
         </Link>
         <h1 className="text-2xl font-semibold tracking-tight">
-          AI Router guide
+          Engagements guide
         </h1>
         {loadError ? (
           <p className="text-sm text-destructive">

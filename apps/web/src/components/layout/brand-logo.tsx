@@ -7,13 +7,13 @@ import Link from "next/link";
  * both placements; only the host container changes.
  *
  * Now a wordmark instead of an image: clicking returns the user to
- * the engagements landing inside the app, rather than out to a
+ * the Overview landing page inside the app, rather than out to a
  * vendor site.
  */
 export function BrandLogo() {
   return (
     <Link
-      href="/engagements"
+      href="/overview"
       className="flex items-baseline gap-1.5 text-foreground"
       aria-label="Assessment Co-Pilot"
     >

@@ -72,7 +72,7 @@ export function MobileDrawer({ user }: { user: Session["user"] }) {
       >
         <div className="flex h-14 items-center justify-between border-b px-4">
           <Link
-            href="/engagements"
+            href="/overview"
             onClick={() => setOpen(false)}
             className="flex items-baseline gap-1 text-foreground"
             aria-label="Assessment Co-Pilot"

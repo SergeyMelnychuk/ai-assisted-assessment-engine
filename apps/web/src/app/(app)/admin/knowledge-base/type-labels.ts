@@ -49,11 +49,12 @@ export const TYPE_LABELS: Record<
       "Canonical role menu the estimation engine picks from when proposing a team.",
     seedPath: "packages/knowledge-seed/role-catalog/*.json",
   },
-  RATE_CARD: {
-    label: "Rate cards (artifacts)",
-    description:
-      "Historical rate-card snapshots. The live default is managed under Rate Cards.",
-  },
+  // RATE_CARD intentionally omitted from the KB admin UI. The live
+  // rate card lives in its own `RateCard` table (managed at
+  // `/admin/rate-cards`); nothing currently writes historical
+  // snapshots into `KnowledgeArtifact[RATE_CARD]`, so the section
+  // would render permanently empty. Re-add an entry here only after
+  // wiring snapshot-on-update behavior on the RateCard router.
   TECHNOLOGY_OPTION: {
     label: "Technology options",
     description: "Known-good tech choices with trade-offs.",
@@ -88,7 +89,8 @@ export const ARTIFACT_TYPES = [
   "RISK_PATTERN",
   "RECOMMENDATION_PATTERN",
   "ROLE_CATALOG",
-  "RATE_CARD",
+  // RATE_CARD is omitted here on purpose — see the matching comment
+  // in TYPE_LABELS above. Add it back when the section has real data.
   "TECHNOLOGY_OPTION",
   "PLATFORM_GUIDANCE",
   "CAPABILITY_MODEL",

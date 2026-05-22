@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Router } from "lucide-react";
+import { BookOpen, Briefcase, ChevronRight, FileSpreadsheet, Router } from "lucide-react";
 
 /**
  * Admin guides index.
@@ -23,11 +23,32 @@ interface GuideEntry {
 
 const GUIDES: readonly GuideEntry[] = [
   {
+    slug: "engagements",
+    title: "Engagements",
+    description:
+      "End-to-end consultant handbook: creating engagements, the workspace tabs, members and access, status lifecycle, archive vs delete, and what lives at engagement vs assessment scope.",
+    icon: Briefcase,
+  },
+  {
     slug: "ai-router",
     title: "AI Router",
     description:
       "End-to-end guide to the AI Router: what the router does, when to pin overrides, fallback chains, provider credentials, safety rails, and FAQ.",
     icon: Router,
+  },
+  {
+    slug: "knowledge-base",
+    title: "Knowledge Base",
+    description:
+      "How the four KB artifact families (frameworks, question templates, risk patterns, role catalog) are structured, how each is used during an engagement, how questions get assigned per assessment, and the edit workflow.",
+    icon: BookOpen,
+  },
+  {
+    slug: "templates",
+    title: "Templates",
+    description:
+      "Customer-uploadable Excel / Word / PowerPoint templates: how to upload, how the engine fills them with engine outputs, binding lifecycle, version management. Covers the estimation workbook + all deliverable shells.",
+    icon: FileSpreadsheet,
   },
 ];
 
@@ -36,14 +57,6 @@ export default function AdminGuidesIndexPage() {
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Admin guides</h1>
-        <p className="text-sm text-muted-foreground">
-          Operator handbook. Each guide is rendered from a markdown file
-          in{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-xs">
-            docs/guides/
-          </code>{" "}
-          so edits ship as PRs and propagate without a redeploy.
-        </p>
       </header>
 
       <ul className="grid gap-3 md:grid-cols-2">
