@@ -83,6 +83,14 @@ function baseOutputs(): EngineOutputs {
       bulletList:
         "- [HIGH/architecture] Adopt event-driven core\n- [MEDIUM/security] Externalise secrets",
     },
+    section: {
+      target_capabilities: "- Multi-tenant data isolation",
+      architecture_style: "Event-driven services with a thin orchestration layer.",
+      technology_choices: "- Postgres for OLTP; Kafka for events.",
+      phasing: "**Phase 1** Foundation\n**Phase 2** Build",
+      greenfield_risks: "- Schema-evolution risk during early phases.",
+      greenfield_recommendations: "- Stand up the platform team in week 1.",
+    },
     generated: { date: "2026-05-10", timestamp: "2026-05-10T00:00:00Z" },
   };
 }

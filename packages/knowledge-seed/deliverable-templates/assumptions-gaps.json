@@ -1,0 +1,38 @@
+{
+  "key": "assumptions_gaps",
+  "name": "Assumptions & Gaps",
+  "description": "Working document capturing the things still in flux: open client questions, external dependencies, evidence gaps, and next discovery activities. Engine fills cover + the estimation assumptions; AI writes the four working narratives so the consultant has a concrete starting list to refine.",
+  "deliverableType": "ASSUMPTIONS_GAPS",
+  "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "AUDIT", "PRE_IMPLEMENTATION", "GREENFIELD"],
+  "sections": [
+    {
+      "key": "open_questions",
+      "title": "Open client questions",
+      "purpose": "3–5 markdown bullets capturing the most important unanswered questions surfaced by the analysis — questions for the client to answer before delivery commits. Each bullet: a clear question (not a statement), one phrase on why it matters. Do NOT invent owners or dates — those are human-fill. Skip housekeeping questions.",
+      "targetLength": "short",
+      "audience": "Engagement lead"
+    },
+    {
+      "key": "dependencies",
+      "title": "External dependencies",
+      "purpose": "3–5 markdown bullets of dependencies this engagement relies on: vendor APIs, upstream teams, ongoing migrations, regulatory windows. Each bullet: the dependency, the kind (vendor/system/team/decision), one phrase on the risk if it slips. Do NOT invent contacts.",
+      "targetLength": "short",
+      "audience": "Engagement lead"
+    },
+    {
+      "key": "evidence_gaps",
+      "title": "Gaps in evidence",
+      "purpose": "3–6 markdown bullets calling out where evidence is thin — domains, systems, or process areas where the analysis lacked source documents, interviews, or code samples. Each bullet: the gap, why it matters for the assessment outcome. Mention the relevant domain (security, observability, etc.) in plain language, not as a code prefix.",
+      "targetLength": "short",
+      "audience": "Engagement lead"
+    },
+    {
+      "key": "next_discovery_activities",
+      "title": "Recommended next discovery activities",
+      "purpose": "4–6 markdown bullets proposing the discovery sessions, workshops, or document requests that should run next to close the gaps. Each bullet: the activity (workshop / document request / interview / system access), the intended output, and the rationale (which gap or open question it addresses). Do NOT paste the raw recommendations list — synthesise activities from gaps + open questions. No priority/domain prefixes.",
+      "targetLength": "medium",
+      "audience": "Engagement lead"
+    }
+  ],
+  "diagrams": []
+}

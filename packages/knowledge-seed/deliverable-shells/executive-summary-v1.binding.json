@@ -1,7 +1,7 @@
 {
   "version": 1,
   "templateKind": "EXECUTIVE_SUMMARY",
-  "notes": "Hand-authored workspace-default binding for the Executive Summary v1 deck. Seven sponsor-facing slides: cover, headline findings, top risks, recommendations, effort/cost summary, engagement context, next steps. Each entry maps a single engine-output field to a {{token}} that appears verbatim in one <a:t> run inside the slide XML — the filler does a flat string replace, so split runs would silently miss. seed: {\"name\":\"Executive Summary\",\"version\":\"v1\",\"kind\":\"EXECUTIVE_SUMMARY\"}",
+  "notes": "Hand-authored workspace-default binding for the Executive Summary v1 deck. Seven sponsor-facing slides: cover, headline findings, top risks, recommendations, effort/cost summary, engagement context, next steps. Cover + numeric stats come from engine outputs; the three narrative panels (findings, risks, recommendations) are filled with AI-written prose via `section.headline_findings`, `section.top_risks`, `section.executive_recommendations` (declared in `deliverable-templates/executive-summary.json`). Previous binding mapped these to raw `*.bulletList` engine dumps; that produced inappropriate sponsor-facing copy with domain-code prefixes. seed: {\"name\":\"Executive Summary\",\"version\":\"v1\",\"kind\":\"EXECUTIVE_SUMMARY\"}",
   "entries": [
     {
       "field": "project.name",
@@ -70,22 +70,22 @@
       "note": "Currency code printed alongside the cost stats."
     },
     {
-      "field": "findings.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{findings_bullet_list}}" },
-      "format": "list",
-      "note": "Pre-formatted '- [severity/domain] title' bullet list from the engine."
+      "field": "section.headline_findings",
+      "target": { "kind": "docx.placeholder", "token": "{{section_headline_findings}}" },
+      "format": "auto",
+      "note": "AI-written headline findings — curated 5–7 sponsor-facing bullets, no domain-code prefixes. Replaces the previous findings.bulletList engine dump."
     },
     {
-      "field": "risks.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{risks_bullet_list}}" },
-      "format": "list",
-      "note": "Top risks bullet list."
+      "field": "section.top_risks",
+      "target": { "kind": "docx.placeholder", "token": "{{section_top_risks}}" },
+      "format": "auto",
+      "note": "AI-written top-risks summary — curated bullets with impact + mitigation. Replaces the previous risks.bulletList dump."
     },
     {
-      "field": "recommendations.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{recommendations_bullet_list}}" },
-      "format": "list",
-      "note": "Priority recommendations bullet list."
+      "field": "section.executive_recommendations",
+      "target": { "kind": "docx.placeholder", "token": "{{section_executive_recommendations}}" },
+      "format": "auto",
+      "note": "AI-written priority recommendations — sponsor-facing, no priority/domain prefixes. Replaces the previous recommendations.bulletList dump."
     },
     {
       "field": "generated.date",

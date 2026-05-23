@@ -75,6 +75,14 @@ function baseOutputs(): EngineOutputs {
     recommendations: {
       bulletList: "- [P1/security] Roll out MFA across the admin estate",
     },
+    section: {
+      headline_findings:
+        "- Auth lacks MFA across admin tier.\n- API gateway has no rate limits.",
+      top_risks:
+        "- Vendor SDK upgrade — schedule slip if dropped.\n- Single-region DB — RTO unmet.",
+      executive_recommendations:
+        "- Lock down identity first.\n- Add baseline observability.\n- Plan the multi-region cutover.",
+    },
     generated: { date: "2026-05-10", timestamp: "2026-05-10T00:00:00Z" },
   };
 }

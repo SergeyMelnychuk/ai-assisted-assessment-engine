@@ -1,0 +1,45 @@
+{
+  "key": "target_state",
+  "name": "Target State",
+  "description": "10-slide target-state deck for an engagement. Engine fills cover + cross-section metadata; AI writes the forces narrative (drivers from findings + risks), the target-state architecture narrative, the recommendation shaping prose, and the transition-risks summary.",
+  "deliverableType": "TARGET_STATE",
+  "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "PRE_IMPLEMENTATION", "GREENFIELD"],
+  "sections": [
+    {
+      "key": "target_state_findings_drivers",
+      "title": "Findings driving the target state",
+      "purpose": "3–5 markdown bullets summarising the most material findings that motivate moving to a new target state. Tight, business-readable language. No `[severity/domain]` prefixes — describe the issue and its consequence.",
+      "targetLength": "short",
+      "audience": "Engineering + business leadership"
+    },
+    {
+      "key": "target_state_risks_drivers",
+      "title": "Risks driving the target state",
+      "purpose": "3–5 markdown bullets covering the risks that justify the target-state move. Each bullet: the risk, the materiality, and the strategic angle (why fixing this requires architecture change, not just process). No prefixes.",
+      "targetLength": "short",
+      "audience": "Engineering + business leadership"
+    },
+    {
+      "key": "target_state_narrative",
+      "title": "Target-state architecture narrative",
+      "purpose": "3–5 sentences describing the proposed target architecture at a strategic level: what shape it takes, the key technology/operating-model shifts, and how it addresses the forces on the prior slide. Prose, not bullets. No raw component lists — this is a narrative for leadership.",
+      "targetLength": "short",
+      "audience": "Engineering leadership"
+    },
+    {
+      "key": "target_state_recommendations",
+      "title": "Recommendations shaping the target",
+      "purpose": "4–6 markdown bullets capturing the top recommendations that physically shape this target state (architecture, platform, process). Skip purely operational/team-level recs. Each bullet: outcome-oriented, not task-oriented.",
+      "targetLength": "medium",
+      "audience": "Engineering leadership"
+    },
+    {
+      "key": "target_state_transition_risks",
+      "title": "Transition risks",
+      "purpose": "3–5 markdown bullets describing the 'risks of moving' — distinct from the steady-state risks shown on slide 3. These are the things that can go wrong while migrating: cutover failures, dual-running burden, dependency staging. Each bullet: the risk + one phrase on mitigation.",
+      "targetLength": "short",
+      "audience": "Engineering + delivery leadership"
+    }
+  ],
+  "diagrams": []
+}

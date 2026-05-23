@@ -52,22 +52,34 @@
       "note": "Proposed target state heading + next-step bullet."
     },
     {
-      "field": "findings.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{findings_bullet_list}}" },
-      "format": "list",
-      "note": "Findings column on the key-forces slide."
+      "field": "section.target_state_findings_drivers",
+      "target": { "kind": "docx.placeholder", "token": "{{section_target_state_findings_drivers}}" },
+      "format": "auto",
+      "note": "AI-written findings-driver bullets on the key-forces slide. Replaces previous findings.bulletList dump."
     },
     {
-      "field": "risks.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{risks_bullet_list}}" },
-      "format": "list",
-      "note": "Risks column on key-forces + carry-over panel on transition-risks slide."
+      "field": "section.target_state_risks_drivers",
+      "target": { "kind": "docx.placeholder", "token": "{{section_target_state_risks_drivers}}" },
+      "format": "auto",
+      "note": "AI-written risk-driver bullets on the key-forces slide. Replaces previous risks.bulletList dump."
     },
     {
-      "field": "recommendations.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{recommendations_bullet_list}}" },
-      "format": "list",
-      "note": "Recommendations panel on the proposed target state slide."
+      "field": "section.target_state_narrative",
+      "target": { "kind": "docx.placeholder", "token": "{{section_target_state_narrative}}" },
+      "format": "auto",
+      "note": "AI-written target-architecture narrative on the proposed target-state slide."
+    },
+    {
+      "field": "section.target_state_recommendations",
+      "target": { "kind": "docx.placeholder", "token": "{{section_target_state_recommendations}}" },
+      "format": "auto",
+      "note": "AI-written recommendation bullets that shape the target. Replaces previous recommendations.bulletList dump."
+    },
+    {
+      "field": "section.target_state_transition_risks",
+      "target": { "kind": "docx.placeholder", "token": "{{section_target_state_transition_risks}}" },
+      "format": "auto",
+      "note": "AI-written transition-risk bullets on the risks-of-transition slide. Distinct from steady-state risks."
     },
     {
       "field": "generated.date",

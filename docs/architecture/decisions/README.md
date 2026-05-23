@@ -73,6 +73,7 @@ This matters most for:
 | [0026](./0026-agent-trace-viewer.md) | Agent trace viewer — five tiers of run inspection | Accepted | Phase 4 |
 | [0027](./0027-hybrid-retrieval-rrf.md) | Hybrid retrieval — Postgres tsvector + cosine via Reciprocal Rank Fusion | Accepted | Phase 4 |
 | [0028](./0028-evidence-citations.md) | Evidence citations — Flavour A (source attribution) now, Flavour B (claim grounding) deferred | Accepted | Phase 4 |
+| [0029](./0029-deliverable-section-field-family.md) | AI-section field family for template bindings — `section.<key>` plumbs AI prose into `.docx` / `.pptx` / `.xlsx` outputs | Accepted | Phase 4 |
 
 ADRs 001–012 are scheduled in the Phase 3 roadmap. See
 [`../../design/phase-3-roadmap.md`](../../design/phase-3-roadmap.md)

@@ -1,0 +1,38 @@
+{
+  "key": "roadmap",
+  "name": "Roadmap",
+  "description": "Phased roadmap deck: cover, phasing rationale, three phase cards, milestones & owners. Engine fills cover + totals; AI writes the phase scope narratives and the milestones section.",
+  "deliverableType": "ROADMAP",
+  "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "AUDIT", "PRE_IMPLEMENTATION", "GREENFIELD"],
+  "sections": [
+    {
+      "key": "phase_1_scope",
+      "title": "Phase 1 — Foundation scope",
+      "purpose": "Describe the scope of Phase 1 (Foundation) for this assessment. Foundation is the de-risking wave: discovery validation, prerequisites, high-risk dependencies, the most critical findings/risks the team must address before scaling work. Use prose paragraphs and short bullet lists where helpful. Anchor every claim in evidence (findings, risks, recommendations, project context). Do NOT include effort hours, costs, or dates — those are filled separately by the engine on the same slide. Keep it 3–6 sentences plus an optional 3–5 item bullet list of in-scope workstreams.",
+      "targetLength": "short",
+      "audience": "Engineering leadership"
+    },
+    {
+      "key": "phase_2_scope",
+      "title": "Phase 2 — Build scope",
+      "purpose": "Describe the scope of Phase 2 (Build). Build is the throughput wave: the bulk of net-new capability, integrations, hardening of the work seeded in Phase 1. Reference the dependencies Phase 1 closes off. Anchor in concrete findings/recommendations/risks. Prose + optional 3–5 bullets. No hours/cost/dates — engine fills those.",
+      "targetLength": "short",
+      "audience": "Engineering leadership"
+    },
+    {
+      "key": "phase_3_scope",
+      "title": "Phase 3 — Scale scope",
+      "purpose": "Describe the scope of Phase 3 (Scale). Scale is the optimization wave: rollout, operational maturity, governance hand-off, retiring scaffolding, longer-term recommendations. Anchor to recommendations that are clearly post-Build. Prose + optional 3–5 bullets. No hours/cost/dates — engine fills those.",
+      "targetLength": "short",
+      "audience": "Engineering leadership"
+    },
+    {
+      "key": "milestones_owners",
+      "title": "Recommended milestones",
+      "purpose": "Synthesise the assessment's CRITICAL + HIGH recommendations into 6–10 actual milestones — outcomes, not tasks. Each milestone should be a single line in the form 'Phase N · MILESTONE NAME — outcome' (e.g. 'Phase 1 · Identity baseline — SSO + MFA enforced on all production paths'). Group implicit by phase if helpful. Skip MEDIUM/LOW recommendations unless they're foundational. DO NOT paste the raw recommendation list — curate, name, and shape into milestones. Output as a tight markdown bullet list.",
+      "targetLength": "medium",
+      "audience": "Sponsor + engineering leadership"
+    }
+  ],
+  "diagrams": []
+}

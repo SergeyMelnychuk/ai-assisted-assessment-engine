@@ -1,4 +1,9 @@
-import { Prisma, type PrismaClient, type TemplateKind } from "@prisma/client";
+import {
+  Prisma,
+  type DeliverableType,
+  type PrismaClient,
+  type TemplateKind,
+} from "@prisma/client";
 import {
   buildStorageKey,
   getObjectBuffer,
@@ -7,6 +12,39 @@ import {
 import { fillTemplate } from "./filler";
 import { loadEngineOutputs } from "./engine-outputs";
 import { bindingDocumentSchema } from "./binding";
+
+/**
+ * Map a TemplateKind to the matching DeliverableType so the engine
+ * outputs can include the latest deliverable's section bodies.
+ *
+ * Returns `null` for kinds that don't correspond to a deliverable
+ * (ESTIMATION = the WBS xlsx, legacy generic kinds = anything goes,
+ * we don't know the type from the kind alone). Callers pass the
+ * mapped type — or `null` — through to `loadEngineOutputs`.
+ */
+function templateKindToDeliverableType(
+  kind: TemplateKind,
+): DeliverableType | null {
+  switch (kind) {
+    case "EXECUTIVE_SUMMARY":
+    case "ASSESSMENT_REPORT":
+    case "RISK_REGISTER":
+    case "TARGET_STATE":
+    case "ROADMAP":
+    case "TEAM_PROPOSAL":
+    case "ESTIMATE":
+    case "ASSUMPTIONS_GAPS":
+    case "SOW_DRAFT":
+    case "GREENFIELD_DISCOVERY":
+      // 1:1 enum overlap between TemplateKind and DeliverableType for
+      // these per-deliverable kinds.
+      return kind as unknown as DeliverableType;
+    // ESTIMATION + legacy generic kinds — no single deliverable type
+    // to pin to. The fill still works; `outputs.section` is empty.
+    default:
+      return null;
+  }
+}
 
 /**
  * Pick the template a fill should use for the given assessment + kind.
@@ -207,7 +245,11 @@ export async function fillAndStoreForAssessment(
 
   const [templateBuffer, outputs] = await Promise.all([
     getObjectBuffer(tplRow.storagePath),
-    loadEngineOutputs(db, params.assessmentId),
+    loadEngineOutputs(
+      db,
+      params.assessmentId,
+      templateKindToDeliverableType(params.kind) ?? undefined,
+    ),
   ]);
 
   const filled = await fillTemplate({

@@ -92,6 +92,18 @@
       "target": { "kind": "docx.placeholder", "token": "{{generated_date}}" },
       "format": "date",
       "note": "Page footer + Engagement summary block — ISO date this draft was generated."
+    },
+    {
+      "field": "section.sow_scope",
+      "target": { "kind": "docx.placeholder", "token": "{{section_sow_scope}}" },
+      "format": "auto",
+      "note": "Section 3.1 (In Scope) — AI-written services-in-scope narrative shaped by the engagement's recommendations + target state."
+    },
+    {
+      "field": "section.sow_deliverables_summary",
+      "target": { "kind": "docx.placeholder", "token": "{{section_sow_deliverables_summary}}" },
+      "format": "auto",
+      "note": "Section 4 (Deliverables) — AI-written deliverables summary derived from the assessment outputs."
     }
   ]
 }

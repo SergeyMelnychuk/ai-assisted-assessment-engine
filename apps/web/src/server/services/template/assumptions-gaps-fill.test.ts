@@ -59,6 +59,12 @@ function baseOutputs(): EngineOutputs {
       bulletList:
         "- [HIGH/security] Establish baseline IAM controls\n- [MEDIUM/data] Inventory PII flows\n- [MEDIUM/architecture] Confirm tenancy model",
     },
+    section: {
+      open_questions: "- Q1: Is region-pairing finalised?",
+      dependencies: "- Vendor SDK upgrade window.",
+      evidence_gaps: "- Observability layer has no recent runbooks.",
+      next_discovery_activities: "- Workshop with platform team on Q-2.",
+    },
     generated: { date: "2026-05-10", timestamp: "2026-05-10T00:00:00Z" },
   };
 }

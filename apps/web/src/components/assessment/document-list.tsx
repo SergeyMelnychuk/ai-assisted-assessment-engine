@@ -100,6 +100,13 @@ export function DocumentList({ assessmentId }: { assessmentId: string }) {
   const listQuery = trpc.document.listByAssessment.useQuery(
     { assessmentId },
     {
+      // Defensive guard — in dev, route transitions / strict-mode double-
+      // mounts can briefly leave `assessmentId` as undefined despite the
+      // typed prop, which fires the query with `{}` and trips the
+      // server's `z.string().cuid()` validator. Skipping until the id is
+      // truthy keeps the dev console clean without changing the
+      // happy-path behaviour.
+      enabled: !!assessmentId,
       // While any doc is mid-ingest, poll every 2s. Once all docs are
       // terminal (READY or FAILED), stop — saves server round-trips on
       // idle tabs.
@@ -435,10 +442,39 @@ export function DocumentCard({
               </p>
             </div>
           ) : doc.ingestStatus !== "READY" && doc.ingestStatus !== "FAILED" ? (
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-1/2" />
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+              {/* Escape hatch — if a doc has been in a non-terminal state
+                  for more than two minutes since creation, the BullMQ job
+                  was probably lost (worker dropped, dedup collision on a
+                  stale jobId, etc.). The reprocess mutation accepts any
+                  status and now cleans up stale Redis jobs, so Force
+                  retry is safe to expose here. (Document has no
+                  `updatedAt` column in the schema, so `createdAt` is the
+                  best signal available without a migration.) */}
+              {Date.now() - new Date(doc.createdAt).getTime() > 120_000 ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+                  <span>
+                    No progress for a while — the worker may have dropped
+                    this job.
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={reprocessMutation.isPending}
+                    onClick={() => reprocessMutation.mutate({ id: doc.id })}
+                  >
+                    {reprocessMutation.isPending
+                      ? "Retrying…"
+                      : "Force retry"}
+                  </Button>
+                </div>
+              ) : null}
             </div>
           ) : null}
 

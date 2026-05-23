@@ -56,6 +56,11 @@ function baseOutputs(overrides: Partial<EngineOutputs> = {}): EngineOutputs {
     findings: { bulletList: "" },
     risks: { bulletList: "" },
     recommendations: { bulletList: "" },
+    section: {
+      sow_scope: "Provider will deliver discovery, target-state design, and implementation guidance.",
+      sow_deliverables_summary:
+        "- Discovery summary\n- Target-state architecture\n- Implementation roadmap",
+    },
     generated: { date: "2026-05-10", timestamp: "2026-05-10T00:00:00Z" },
     ...overrides,
   };
@@ -95,8 +100,10 @@ describe("sow-draft-v1 deliverable shell", () => {
       );
     }
     expect(result.data.templateKind).toBe("SOW_DRAFT");
-    // Spec calls out 15 bound fields.
-    expect(result.data.entries.length).toBe(15);
+    // 15 engine-driven fields + 2 AI section fields (section.sow_scope,
+    // section.sow_deliverables_summary) added in the deliverable-section
+    // wiring work.
+    expect(result.data.entries.length).toBe(17);
   });
 
   it("fills every {{token}} from the binding when run against the seeded shell", async () => {

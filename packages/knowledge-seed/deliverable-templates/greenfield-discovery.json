@@ -1,0 +1,52 @@
+{
+  "key": "greenfield_discovery",
+  "name": "Greenfield Discovery",
+  "description": "Pre-implementation discovery report for greenfield engagements. Engine fills cover + numeric/contextual fields (project description, timeline, budget sensitivity, compliance, totals). AI writes the substantive narrative for target capabilities, architecture style, technology choices, phasing, risks, and recommendations — replacing the previous raw `{{risks_list}}` and `{{recommendations_list}}` engine-bullet dumps.",
+  "deliverableType": "GREENFIELD_DISCOVERY",
+  "applicableModes": ["GREENFIELD", "PRE_IMPLEMENTATION"],
+  "sections": [
+    {
+      "key": "target_capabilities",
+      "title": "Target capabilities",
+      "purpose": "4–6 markdown bullets enumerating the capability set the target system must support, derived from the project context and the engagement's recommendations. Examples: 'Multi-tenant tenancy with per-tenant data isolation', 'Real-time event ingestion with sub-second latency tier'. Each bullet a concise capability + one phrase on why it matters.",
+      "targetLength": "medium",
+      "audience": "Engineering leadership"
+    },
+    {
+      "key": "architecture_style",
+      "title": "Recommended architecture style",
+      "purpose": "3–5 sentences proposing a target architecture STYLE (not a detailed design) sized to the goals, constraints, and team shape. Examples: 'event-driven microservices', 'modular monolith with extraction points', 'serverless-first with selective long-running compute'. Justify briefly. Cite the dominant constraints (timeline, budget, compliance, team) that pushed the choice.",
+      "targetLength": "short",
+      "audience": "Engineering leadership"
+    },
+    {
+      "key": "technology_choices",
+      "title": "Technology choices",
+      "purpose": "5–8 markdown bullets recommending concrete technology selections shaped by the industry, compliance posture, and delivery timeline. Each bullet: the layer (e.g. 'database', 'orchestration', 'observability') and the recommended choice + one phrase on the trade-off. Mark anything aspirational as such.",
+      "targetLength": "medium",
+      "audience": "Engineering leadership"
+    },
+    {
+      "key": "phasing",
+      "title": "Phasing",
+      "purpose": "3–4 phases sized to the budget envelope + timeline. For each phase: short name, one-sentence goal, the 2–3 capabilities it lands, and the milestone that signals 'done'. Markdown — phase names as bold/uppercase opener, then narrative beneath.",
+      "targetLength": "medium",
+      "audience": "Engineering + delivery leadership"
+    },
+    {
+      "key": "greenfield_risks",
+      "title": "Discovery risks",
+      "purpose": "4–6 markdown bullets covering the risks specific to a greenfield build — unknowns, assumption-driven design choices, scaling cliffs, vendor lock-in concerns. Each bullet: the risk + one phrase on how to de-risk it in early phases. Replaces the previous raw risks-bulletlist dump on this slide.",
+      "targetLength": "short",
+      "audience": "Engineering leadership"
+    },
+    {
+      "key": "greenfield_recommendations",
+      "title": "Recommendations & next steps",
+      "purpose": "5–8 markdown bullets — concrete next steps coming out of discovery, sequenced for the implementation engagement. Each bullet: action verb, outcome, one phrase on who/when. Cut housekeeping items; keep the load-bearing decisions. Replaces the previous raw recommendations-bulletlist dump.",
+      "targetLength": "medium",
+      "audience": "Sponsor + engineering leadership"
+    }
+  ],
+  "diagrams": []
+}

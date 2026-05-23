@@ -106,16 +106,40 @@
       "note": "Team-shape section — currency for the cost envelope."
     },
     {
-      "field": "recommendations.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{recommendations_list}}" },
+      "field": "section.target_capabilities",
+      "target": { "kind": "docx.placeholder", "token": "{{section_target_capabilities}}" },
       "format": "auto",
-      "note": "Recommendations section — engine-produced bullet list."
+      "note": "Section 3 — AI-written target capability set."
     },
     {
-      "field": "risks.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{risks_list}}" },
+      "field": "section.architecture_style",
+      "target": { "kind": "docx.placeholder", "token": "{{section_architecture_style}}" },
       "format": "auto",
-      "note": "Risks section — engine-produced bullet list."
+      "note": "Section 5 — AI-written recommended architecture style narrative."
+    },
+    {
+      "field": "section.technology_choices",
+      "target": { "kind": "docx.placeholder", "token": "{{section_technology_choices}}" },
+      "format": "auto",
+      "note": "Section 6 — AI-written technology selection bullets."
+    },
+    {
+      "field": "section.phasing",
+      "target": { "kind": "docx.placeholder", "token": "{{section_phasing}}" },
+      "format": "auto",
+      "note": "Section 8 — AI-written phase plan."
+    },
+    {
+      "field": "section.greenfield_risks",
+      "target": { "kind": "docx.placeholder", "token": "{{section_greenfield_risks}}" },
+      "format": "auto",
+      "note": "Section 9 — AI-written greenfield-specific risks. Replaces previous risks.bulletList raw dump."
+    },
+    {
+      "field": "section.greenfield_recommendations",
+      "target": { "kind": "docx.placeholder", "token": "{{section_greenfield_recommendations}}" },
+      "format": "auto",
+      "note": "Section 10 — AI-written recommendations + next steps. Replaces previous recommendations.bulletList raw dump."
     },
     {
       "field": "generated.date",

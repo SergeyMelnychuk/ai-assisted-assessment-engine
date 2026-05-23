@@ -1,0 +1,17 @@
+{
+  "key": "estimate_summary",
+  "name": "Estimate Summary",
+  "description": "Estimate workbook. Engine fills the Cover totals, Roles sheet (one row per role), and Assumptions sheet (engine assumptions text). AI writes a short estimate-overview narrative explaining the totals + drivers + confidence — a leadership read that complements the structured numbers.",
+  "deliverableType": "ESTIMATE",
+  "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "AUDIT", "PRE_IMPLEMENTATION", "GREENFIELD"],
+  "sections": [
+    {
+      "key": "estimate_overview",
+      "title": "Estimate overview",
+      "purpose": "2–4 sentences explaining the estimate at a glance: what scenario it represents, what's driving the cost range, the biggest sensitivities, and a one-line confidence call. Prose, not bullets. No role-by-role detail (the Roles sheet covers that).",
+      "targetLength": "short",
+      "audience": "Sponsor + engagement lead"
+    }
+  ],
+  "diagrams": []
+}

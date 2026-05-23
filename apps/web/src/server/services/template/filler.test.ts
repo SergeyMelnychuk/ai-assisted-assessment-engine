@@ -54,6 +54,7 @@ function baseOutputs(overrides: Partial<EngineOutputs> = {}): EngineOutputs {
     findings: { bulletList: "" },
     risks: { bulletList: "" },
     recommendations: { bulletList: "" },
+    section: {},
     generated: { date: "2026-05-07", timestamp: "2026-05-07T00:00:00Z" },
     ...overrides,
   };

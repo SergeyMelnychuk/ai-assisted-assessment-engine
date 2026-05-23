@@ -57,14 +57,20 @@ export function TemplatesWorkspace({
   engagementId: string | null;
 }) {
   const utils = trpc.useUtils();
+  // Toggle controlling whether archived templates are listed. Default
+  // off — archived rows are noise on the day-to-day view; flipping the
+  // toggle pulls them in alongside the live ones, with the destructive
+  // actions (Restore / Delete) gated behind the same authz the server
+  // already enforces via `assertTemplateMutationAccess`.
+  const [showArchived, setShowArchived] = useState(false);
   // Auto-poll while any row is still in `bindingStatus === "pending"`.
   // The proposer runs in the background and writes back to the
   // Template row + audit log; we just refetch on a 5s cadence until
   // every row is settled, then drop polling.
   const list = trpc.template.list.useQuery(
     engagementId
-      ? { engagementId, includeArchived: false }
-      : { includeArchived: false },
+      ? { engagementId, includeArchived: showArchived }
+      : { includeArchived: showArchived },
     {
       refetchInterval: (query) => {
         const data = query.state.data;
@@ -74,12 +80,28 @@ export function TemplatesWorkspace({
     },
   );
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Two-click confirm for Delete — same UX pattern as the document
+  // delete button. Tracks which row id is currently in "really delete?"
+  // state. Null = no confirm pending.
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  // Client-side search. The list is short (per-engagement uploads +
+  // workspace defaults), so we filter the already-fetched data
+  // in-memory rather than round-tripping. Matches name, filename, and
+  // the human kind label, all case-insensitive.
+  const [searchQuery, setSearchQuery] = useState("");
 
   const refresh = () => utils.template.list.invalidate();
 
   const approve = trpc.template.approve.useMutation({ onSuccess: refresh });
   const deprecate = trpc.template.deprecate.useMutation({ onSuccess: refresh });
   const archive = trpc.template.archive.useMutation({ onSuccess: refresh });
+  const restore = trpc.template.restore.useMutation({ onSuccess: refresh });
+  const del = trpc.template.delete.useMutation({
+    onSuccess: () => {
+      setConfirmDeleteId(null);
+      refresh();
+    },
+  });
   const reproposeBinding = trpc.template.reproposeBinding.useMutation({
     onSuccess: refresh,
   });
@@ -90,22 +112,90 @@ export function TemplatesWorkspace({
 
       <div>
         <h2 className="mb-2 text-base font-semibold">Available templates</h2>
-        {list.isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        ) : !list.data || list.data.length === 0 ? (
-          <p className="rounded-md border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
-            No templates yet. Upload a workbook or document above.
-          </p>
-        ) : (
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <Input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              // Drop any in-flight confirm when the filter changes —
+              // the row in question may not even be visible anymore.
+              setConfirmDeleteId(null);
+            }}
+            placeholder="Search by name, filename, or kind…"
+            className="sm:max-w-xs"
+            aria-label="Filter templates"
+          />
+          <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              className="h-3.5 w-3.5"
+              checked={showArchived}
+              onChange={(e) => {
+                setShowArchived(e.target.checked);
+                setConfirmDeleteId(null);
+              }}
+            />
+            Show archived
+          </label>
+        </div>
+        {(() => {
+          // Apply the client-side search filter to the fetched rows.
+          // Match against name, filename, and the kind's display label;
+          // empty query passes everything through.
+          const q = searchQuery.trim().toLowerCase();
+          const allRows = list.data ?? [];
+          const filteredRows = q
+            ? allRows.filter((r) => {
+                const kindLabel = (KIND_LABELS[r.kind] ?? r.kind).toLowerCase();
+                return (
+                  r.name.toLowerCase().includes(q) ||
+                  r.filename.toLowerCase().includes(q) ||
+                  kindLabel.includes(q)
+                );
+              })
+            : allRows;
+          if (list.isLoading) {
+            return <p className="text-sm text-muted-foreground">Loading…</p>;
+          }
+          if (allRows.length === 0) {
+            return (
+              <p className="rounded-md border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+                No templates yet. Upload a workbook or document above.
+              </p>
+            );
+          }
+          if (filteredRows.length === 0) {
+            return (
+              <p className="rounded-md border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+                No templates match{" "}
+                <span className="font-medium">&ldquo;{searchQuery}&rdquo;</span>
+                . Try a different search, or clear the filter.
+              </p>
+            );
+          }
+          return (
           <ul className="divide-y rounded-md border">
-            {list.data.map((row) => (
+            {filteredRows.map((row) => {
+              const isArchived = row.archivedAt !== null;
+              return (
               <li
                 key={row.id}
-                className="flex items-center justify-between gap-3 p-3"
+                className={
+                  "flex items-center justify-between gap-3 p-3 " +
+                  (isArchived ? "bg-muted/40" : "")
+                }
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-sm font-medium">
-                    <span className="truncate">{row.name}</span>
+                    <span
+                      className={
+                        "truncate " +
+                        (isArchived ? "text-muted-foreground line-through" : "")
+                      }
+                    >
+                      {row.name}
+                    </span>
                     <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
                       {row.version}
                     </span>
@@ -126,72 +216,148 @@ export function TemplatesWorkspace({
                         workspace default
                       </span>
                     ) : null}
+                    {isArchived ? (
+                      <span className="rounded bg-gray-200 px-1.5 py-0.5 text-xs text-gray-700">
+                        archived
+                      </span>
+                    ) : null}
                   </div>
                   <div className="mt-0.5 text-xs text-muted-foreground">
                     {KIND_LABELS[row.kind] ?? row.kind} · {row.filename} ·{" "}
                     {(row.fileSize / 1024).toFixed(0)} KB · uploaded{" "}
                     {new Date(row.createdAt).toLocaleDateString()}
+                    {isArchived && row.archivedAt ? (
+                      <>
+                        {" "}
+                        · archived{" "}
+                        {new Date(row.archivedAt).toLocaleDateString()}
+                      </>
+                    ) : null}
                   </div>
-                  <BindingStatusLine status={row.bindingStatus} />
-                  {row.bindingStatus === "failed" && row.bindingError ? (
-                    <div className="mt-1 text-xs text-destructive">
-                      {row.bindingError}
-                    </div>
+                  {!isArchived ? (
+                    <>
+                      <BindingStatusLine status={row.bindingStatus} />
+                      {row.bindingStatus === "failed" && row.bindingError ? (
+                        <div className="mt-1 text-xs text-destructive">
+                          {row.bindingError}
+                        </div>
+                      ) : null}
+                    </>
                   ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setEditingId(row.id)}
-                  >
-                    {row.hasBinding ? "Edit binding" : "Review binding"}
-                  </Button>
-                  {row.bindingStatus === "failed" ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => reproposeBinding.mutate({ id: row.id })}
-                      disabled={reproposeBinding.isPending}
-                    >
-                      {reproposeBinding.isPending &&
-                      reproposeBinding.variables?.id === row.id
-                        ? "Retrying…"
-                        : "Retry AI binding"}
-                    </Button>
-                  ) : null}
-                  {row.status === "PROPOSED" && row.hasBinding ? (
-                    <Button
-                      size="sm"
-                      onClick={() => approve.mutate({ id: row.id })}
-                      disabled={approve.isPending}
-                    >
-                      Approve
-                    </Button>
-                  ) : null}
-                  {row.status === "APPROVED" ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => deprecate.mutate({ id: row.id })}
-                      disabled={deprecate.isPending}
-                    >
-                      Deprecate
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => archive.mutate({ id: row.id })}
-                    disabled={archive.isPending}
-                  >
-                    Archive
-                  </Button>
+                  {isArchived ? (
+                    // Archived rows: Restore + Delete only. Two-click
+                    // confirm on Delete because it's irreversible and
+                    // takes the MinIO object + binding history with it.
+                    <>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => restore.mutate({ id: row.id })}
+                        disabled={
+                          restore.isPending &&
+                          restore.variables?.id === row.id
+                        }
+                      >
+                        {restore.isPending &&
+                        restore.variables?.id === row.id
+                          ? "Restoring…"
+                          : "Restore"}
+                      </Button>
+                      {confirmDeleteId === row.id ? (
+                        <>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => del.mutate({ id: row.id })}
+                            disabled={del.isPending}
+                          >
+                            {del.isPending && del.variables?.id === row.id
+                              ? "Deleting…"
+                              : "Really delete?"}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={del.isPending}
+                            onClick={() => setConfirmDeleteId(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => setConfirmDeleteId(row.id)}
+                        >
+                          Delete
+                        </Button>
+                      )}
+                    </>
+                  ) : (
+                    // Live rows: the existing action set.
+                    <>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setEditingId(row.id)}
+                      >
+                        {row.hasBinding ? "Edit binding" : "Review binding"}
+                      </Button>
+                      {row.bindingStatus === "failed" ? (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() =>
+                            reproposeBinding.mutate({ id: row.id })
+                          }
+                          disabled={reproposeBinding.isPending}
+                        >
+                          {reproposeBinding.isPending &&
+                          reproposeBinding.variables?.id === row.id
+                            ? "Retrying…"
+                            : "Retry AI binding"}
+                        </Button>
+                      ) : null}
+                      {row.status === "PROPOSED" && row.hasBinding ? (
+                        <Button
+                          size="sm"
+                          onClick={() => approve.mutate({ id: row.id })}
+                          disabled={approve.isPending}
+                        >
+                          Approve
+                        </Button>
+                      ) : null}
+                      {row.status === "APPROVED" ? (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => deprecate.mutate({ id: row.id })}
+                          disabled={deprecate.isPending}
+                        >
+                          Deprecate
+                        </Button>
+                      ) : null}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => archive.mutate({ id: row.id })}
+                        disabled={archive.isPending}
+                      >
+                        Archive
+                      </Button>
+                    </>
+                  )}
                 </div>
               </li>
-            ))}
+              );
+            })}
           </ul>
-        )}
+          );
+        })()}
       </div>
 
       <RecentFills engagementId={engagementId} />
@@ -217,6 +383,10 @@ function RecentFills({ engagementId }: { engagementId: string | null }) {
     engagementId ? { engagementId, limit: 20 } : { limit: 20 },
     { refetchInterval: 15_000 },
   );
+  // Same client-side search pattern as the templates list above —
+  // matches the source template name, the produced file's name, and
+  // the kind label, all case-insensitive.
+  const [searchQuery, setSearchQuery] = useState("");
 
   if (fills.isLoading) {
     return (
@@ -232,45 +402,83 @@ function RecentFills({ engagementId }: { engagementId: string | null }) {
     return null;
   }
 
+  // Match against the source template name + version, the produced
+  // document's filename, and the kind's display label.
+  const q = searchQuery.trim().toLowerCase();
+  const filteredRows = q
+    ? rows.filter((f) => {
+        const docName = f.outputDocument?.filename.toLowerCase() ?? "";
+        const tplName = f.template.name.toLowerCase();
+        const tplVersion = f.template.version.toLowerCase();
+        const kindLabel = (
+          KIND_LABELS[f.template.kind as TemplateKind] ?? f.template.kind
+        ).toLowerCase();
+        return (
+          tplName.includes(q) ||
+          tplVersion.includes(q) ||
+          docName.includes(q) ||
+          kindLabel.includes(q)
+        );
+      })
+    : rows;
+
   return (
     <div>
       <h2 className="mb-2 text-base font-semibold">Recent fills</h2>
-      <ul className="divide-y rounded-md border">
-        {rows.map((f) => {
-          const doc = f.outputDocument;
-          if (!doc) return null;
-          return (
-            <li
-              key={f.id}
-              className="flex items-center justify-between gap-3 p-3 text-sm"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 font-medium">
-                  <span className="truncate">{f.template.name}</span>
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
-                    {f.template.version}
-                  </span>
-                </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">
-                  {KIND_LABELS[f.template.kind as TemplateKind] ??
-                    f.template.kind}{" "}
-                  · {doc.filename} · {(doc.fileSize / 1024).toFixed(0)} KB ·{" "}
-                  {new Date(f.filledAt).toLocaleString(undefined, {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                </div>
-              </div>
-              <a
-                href={`/api/documents/${doc.id}/download?download=1`}
-                className="shrink-0 text-sm font-medium text-primary underline-offset-2 hover:underline"
+      <div className="mb-3">
+        <Input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search fills by template, file, or kind…"
+          className="sm:max-w-xs"
+          aria-label="Filter recent fills"
+        />
+      </div>
+      {filteredRows.length === 0 ? (
+        <p className="rounded-md border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+          No fills match{" "}
+          <span className="font-medium">&ldquo;{searchQuery}&rdquo;</span>. Try
+          a different search, or clear the filter.
+        </p>
+      ) : (
+        <ul className="divide-y rounded-md border">
+          {filteredRows.map((f) => {
+            const doc = f.outputDocument;
+            if (!doc) return null;
+            return (
+              <li
+                key={f.id}
+                className="flex items-center justify-between gap-3 p-3 text-sm"
               >
-                Download
-              </a>
-            </li>
-          );
-        })}
-      </ul>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 font-medium">
+                    <span className="truncate">{f.template.name}</span>
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                      {f.template.version}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    {KIND_LABELS[f.template.kind as TemplateKind] ??
+                      f.template.kind}{" "}
+                    · {doc.filename} · {(doc.fileSize / 1024).toFixed(0)} KB ·{" "}
+                    {new Date(f.filledAt).toLocaleString(undefined, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
+                  </div>
+                </div>
+                <a
+                  href={`/api/documents/${doc.id}/download?download=1`}
+                  className="shrink-0 text-sm font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  Download
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

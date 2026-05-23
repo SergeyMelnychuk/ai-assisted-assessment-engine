@@ -128,6 +128,12 @@
       "target": { "kind": "docx.placeholder", "token": "{{roles_justifications}}" },
       "format": "auto",
       "note": "Per-role justification section (comma-joined narrative)."
+    },
+    {
+      "field": "section.team_proposal_overview",
+      "target": { "kind": "docx.placeholder", "token": "{{section_team_proposal_overview}}" },
+      "format": "auto",
+      "note": "AI-written engagement-context narrative explaining why this team shape was chosen — sits above the role table. Replaces the previous static framing paragraph."
     }
   ]
 }

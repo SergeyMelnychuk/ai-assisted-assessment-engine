@@ -227,7 +227,7 @@ audit-log lifecycle conventions (`ENQUEUE_X` / `RUN_X` /
 | `generate-follow-ups` | Answering a question | Dedup-debounced (1.5s); Claude proposes AI follow-up questions | Yes |
 | `run-analysis` | "Run analysis" button | Evidence + KB risk patterns → Claude → Findings/Risks/Recs/Assumptions; flips `Assessment.status=ANALYSIS`. Owns **all** per-assessment text-AI work now. | Yes |
 | `run-estimation` | "Generate team & estimate" | Evidence + Findings + KB role catalog → Claude team proposal → priced against rate card. Post-success: best-effort WBS template fill (ADR-0018, ADR-0020 soft-failure). | Yes |
-| `generate-deliverable` | "Generate deliverable" | Planned diagrams (N Claude calls) + batched sections (1 call) → `Deliverable` + `DeliverableSection[]` + `Diagram[]`. Post-success: best-effort deliverable-shell template fill (per-type kind from ADR-0018). | Yes |
+| `generate-deliverable` | "Generate deliverable" | Planned diagrams (N Claude calls) + per-section AI prose (N calls, ~3 concurrency) → `Deliverable` + `DeliverableSection[]` + `Diagram[]`. Post-success: best-effort deliverable-shell template fill (per-type kind from ADR-0018; AI section bodies land in `{{section_<key>}}` placeholders via ADR-0029). | Yes |
 | `propose-template-binding` | Template upload | Customer template structural extract → AI binding proposer → `Template.bindingJson`. Human approves separately. | Yes |
 | `agent-harness` | Agent-mode evidence collection | Workflow planner → tool calls against external systems → Evidence rows. Gated by `features.agentEnabled` (ADR-0014, ADR-0017). | Yes |
 | `prune-logs` | Repeatable (every 6h) | Deletes operator-facing `Log` rows older than `LOG_RETENTION_DAYS`. AuditLog is retained intentionally. | **No** |
@@ -330,7 +330,7 @@ hot-reloaded by the router cache).
 | `followups.generate` | Adaptive follow-up questions after an answer (debounced 1.5 s). | Anthropic Haiku 4.5 | OpenAI GPT-5-mini → Mistral small | no |
 | `agent.planner` | Tool-call planner inside the agent harness (ADR-0014). | Anthropic Sonnet 4.7 | OpenAI GPT-5 | yes |
 | `agent.workflow_planner` | Workflow-step graph planner (ADR-0021) — emits the user-driven node list for the React-Flow surface. | Anthropic Sonnet 4.7 | OpenAI GPT-5 | yes |
-| `template.binding_proposer` | Customer-uploaded workbook / docx → JSON binding proposal (ADR-0018). | Anthropic Sonnet 4.7 | OpenAI GPT-5 | no |
+| `template.binding_proposer` | Customer-uploaded workbook / docx → JSON binding proposal (ADR-0018). Section-aware: the prompt receives the per-deliverable-type `section.<key>` catalog so narrative-shaped tokens get bound to AI prose, not raw bullet dumps (ADR-0029). | Anthropic Sonnet 4.7 | OpenAI GPT-5 | no |
 | `ingest.domain_classifier` | Per-chunk domain auto-tagging at ingest (ADR-0024), behind `features.autoClassifyChunks`. | Anthropic Haiku 4.5 | OpenAI GPT-5 | yes |
 | `embedding.ingest` | Embed chunks at ingest. 1536-dim assertion on every row. | OpenAI `text-embedding-3-small` | Bedrock Titan v2 (1536-dim) | n/a |
 | `embedding.query` | Embed the retrieval query. **No fallback** — a mid-flight provider hop would change embedding space and wreck pgvector cosine scores. | OpenAI `text-embedding-3-small` | — | n/a |

@@ -61,6 +61,16 @@ function baseOutputs(overrides: Partial<EngineOutputs> = {}): EngineOutputs {
     recommendations: {
       bulletList: "- [HIGH/DATA] Adopt schema registry",
     },
+    section: {
+      executive_summary: "Two-paragraph sponsor summary.",
+      engagement_context: "Engagement scope + approach narrative.",
+      current_state: "Current-state architecture observations.",
+      key_findings: "Top findings, prose form, no severity prefixes.",
+      risks: "Top risks, prose form, with mitigations.",
+      recommendations: "Prioritised recs in near/mid/long term buckets.",
+      target_state: "Where the architecture should go.",
+      team_and_estimate: "Proposed team narrative.",
+    },
     generated: { date: "2026-05-10", timestamp: "2026-05-10T00:00:00Z" },
     ...overrides,
   };

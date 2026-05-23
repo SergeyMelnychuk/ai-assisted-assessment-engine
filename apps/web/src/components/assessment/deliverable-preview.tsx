@@ -11,6 +11,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -18,6 +27,7 @@ import { DiagramEditor } from "./diagram-editor";
 import { SectionReview } from "@/components/review/section-review";
 import { ReviewDashboard } from "@/components/review/review-dashboard";
 import { GuideMarkdown } from "@/components/admin/guide/guide-markdown";
+import { MarkdownEditor } from "@/components/common/markdown-editor";
 
 interface SectionRow {
   id: string;
@@ -76,6 +86,19 @@ export function DeliverablePreview({ deliverableId }: { deliverableId: string })
   });
 
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [regenSectionId, setRegenSectionId] = useState<string | null>(null);
+  const [regenFeedback, setRegenFeedback] = useState("");
+
+  const regenSectionMutation = trpc.deliverable.regenerateSection.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.deliverable.getById.invalidate({ id: deliverableId }),
+        utils.review.deliverableProgress.invalidate({ deliverableId }),
+      ]);
+      setRegenSectionId(null);
+      setRegenFeedback("");
+    },
+  });
 
   if (query.isLoading) {
     return (
@@ -145,7 +168,9 @@ export function DeliverablePreview({ deliverableId }: { deliverableId: string })
         </p>
       ) : (
         sections.map((section) => {
-          const isEditing = editingSectionId === section.id;
+          const isRegenOpen = regenSectionId === section.id;
+          const isThisSectionRegenerating =
+            regenSectionMutation.isPending && regenSectionId === section.id;
           const body = section.contentFinal ?? section.contentDraft ?? "";
           return (
             <Card key={section.id}>
@@ -169,31 +194,62 @@ export function DeliverablePreview({ deliverableId }: { deliverableId: string })
                 </CardTitle>
               </CardHeader>
 
-              {isEditing ? (
-                <CardContent>
-                  <SectionEditor
-                    title={section.title}
-                    body={body}
-                    busy={editMutation.isPending}
-                    onCancel={() => setEditingSectionId(null)}
-                    onSave={(next) =>
-                      editMutation.mutate(
-                        {
+              {isRegenOpen ? (
+                <CardContent className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Reviewer feedback (optional)
+                    </label>
+                    <Textarea
+                      className="mt-1 min-h-[96px]"
+                      placeholder='e.g. "Cut the intro paragraph", "Rewrite for an executive audience", "Add more detail on the cost trade-offs".'
+                      value={regenFeedback}
+                      onChange={(e) => setRegenFeedback(e.target.value)}
+                      disabled={isThisSectionRegenerating}
+                    />
+                  </div>
+                  {section.contentFinal ? (
+                    <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+                      This section is already published. Regenerating will
+                      replace it with a new draft and require a fresh
+                      review before it can be re-approved.
+                    </p>
+                  ) : null}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={isThisSectionRegenerating}
+                      onClick={() =>
+                        regenSectionMutation.mutate({
                           sectionId: section.id,
-                          action: "EDIT",
-                          newContent: next.body,
-                          newTitle:
-                            next.title !== section.title
-                              ? next.title
-                              : undefined,
-                          comments: next.comment || undefined,
-                        },
-                        {
-                          onSuccess: () => setEditingSectionId(null),
-                        },
-                      )
-                    }
-                  />
+                          feedback: regenFeedback.trim() || undefined,
+                        })
+                      }
+                    >
+                      {isThisSectionRegenerating
+                        ? "Regenerating…"
+                        : "Regenerate"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      disabled={isThisSectionRegenerating}
+                      onClick={() => {
+                        setRegenSectionId(null);
+                        setRegenFeedback("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    {regenSectionMutation.error &&
+                    regenSectionId === section.id ? (
+                      <span className="text-xs text-destructive">
+                        {regenSectionMutation.error.message}
+                      </span>
+                    ) : null}
+                  </div>
                 </CardContent>
               ) : (
                 <CardContent className="space-y-3">
@@ -214,14 +270,27 @@ export function DeliverablePreview({ deliverableId }: { deliverableId: string })
                     )}
                   </div>
                   <div className="flex items-center justify-between">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setEditingSectionId(section.id)}
-                    >
-                      Edit
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setEditingSectionId(section.id)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setRegenSectionId(section.id);
+                          setRegenFeedback("");
+                        }}
+                      >
+                        Regenerate…
+                      </Button>
+                    </div>
                   </div>
                   <SectionReview
                     sectionId={section.id}
@@ -246,67 +315,170 @@ export function DeliverablePreview({ deliverableId }: { deliverableId: string })
           ))}
         </section>
       ) : null}
+
+      {/* Section edit dialog — mounted once at the bottom and driven by
+          `editingSectionId`. Replaces the previous inline edit that
+          pushed the textarea below the fold and lost focus on open. The
+          dialog focuses the content textarea by default so the user can
+          start typing immediately. */}
+      <SectionEditDialog
+        section={
+          editingSectionId
+            ? sections.find((s) => s.id === editingSectionId) ?? null
+            : null
+        }
+        busy={editMutation.isPending}
+        onClose={() => setEditingSectionId(null)}
+        onSave={(sectionId, next, originalTitle) =>
+          editMutation.mutate(
+            {
+              sectionId,
+              action: "EDIT",
+              newContent: next.body,
+              newTitle:
+                next.title !== originalTitle ? next.title : undefined,
+              comments: next.comment || undefined,
+            },
+            {
+              onSuccess: () => setEditingSectionId(null),
+            },
+          )
+        }
+      />
     </div>
   );
 }
 
-function SectionEditor({
-  title,
-  body,
+/**
+ * Full-screen section editor in a wide modal (5xl / 95vw, capped at
+ * 90vh). Replaces the previous inline edit that scrolled the textarea
+ * out of view and stole focus on open. Auto-focuses the content
+ * textarea so the user can start typing immediately — that's the
+ * primary editable surface, the Title is rarely changed.
+ *
+ * Local form state is keyed off `section.id`: changing which section
+ * is being edited rebuilds the component, so stale buffers from a
+ * previous section never leak into a new edit.
+ */
+function SectionEditDialog({
+  section,
+  busy,
+  onClose,
+  onSave,
+}: {
+  section: SectionRow | null;
+  busy: boolean;
+  onClose: () => void;
+  onSave: (
+    sectionId: string,
+    next: { title: string; body: string; comment?: string },
+    originalTitle: string,
+  ) => void;
+}) {
+  return (
+    <Dialog
+      open={!!section}
+      onOpenChange={(open) => {
+        if (!open && !busy) onClose();
+      }}
+    >
+      {section ? (
+        // `key={section.id}` ensures the inner form remounts (and resets
+        // its local buffers) when the user switches from one section's
+        // edit to another's.
+        <SectionEditDialogContent
+          key={section.id}
+          section={section}
+          busy={busy}
+          onCancel={onClose}
+          onSave={(next) => onSave(section.id, next, section.title)}
+        />
+      ) : null}
+    </Dialog>
+  );
+}
+
+function SectionEditDialogContent({
+  section,
   busy,
   onCancel,
   onSave,
 }: {
-  title: string;
-  body: string;
+  section: SectionRow;
   busy: boolean;
   onCancel: () => void;
   onSave: (next: { title: string; body: string; comment?: string }) => void;
 }) {
-  const [t, setT] = useState(title);
-  const [b, setB] = useState(body);
+  const initialBody = section.contentFinal ?? section.contentDraft ?? "";
+  const [t, setT] = useState(section.title);
+  const [b, setB] = useState(initialBody);
   const [comment, setComment] = useState("");
 
+  const canSave = !busy && t.trim().length > 0 && b.trim().length > 0;
+
   return (
-    <div className="space-y-3">
-      <div>
-        <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Title
-        </label>
-        <Input
-          className="mt-1"
-          value={t}
-          onChange={(e) => setT(e.target.value)}
-          disabled={busy}
-        />
-      </div>
-      <div>
-        <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Content (markdown)
-        </label>
-        <Textarea
-          className="mt-1 min-h-[240px] font-mono text-sm"
-          value={b}
-          onChange={(e) => setB(e.target.value)}
-          disabled={busy}
-        />
-      </div>
-      <div>
-        <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Edit rationale (optional)
-        </label>
-        <Textarea
-          className="mt-1 min-h-[60px] text-sm"
-          placeholder="Why did this section need an edit? Shows up in the review history."
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          disabled={busy}
-        />
-      </div>
-      <div className="flex gap-2">
+    <DialogContent
+      size="wide"
+      // Let Radix focus its default first focusable element. The
+      // markdown editor below mounts a Tiptap rich-text view by
+      // default; once it's interactive the reviewer can click into it
+      // to start typing. (Previously we force-focused a single
+      // textarea ref; that doesn't apply now that the editor has two
+      // tab-switchable views.)
+    >
+      <DialogHeader>
+        <DialogTitle>Edit section</DialogTitle>
+        <DialogDescription>
+          #{section.orderIndex + 1} · {section.sectionKey} ·{" "}
+          {section.contentFinal ? "published — saving creates a new revision" : "AI draft"}
+        </DialogDescription>
+      </DialogHeader>
+
+      <DialogBody className="space-y-4">
+        <div>
+          <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Title
+          </label>
+          <Input
+            className="mt-1"
+            value={t}
+            onChange={(e) => setT(e.target.value)}
+            disabled={busy}
+          />
+        </div>
+        <div>
+          <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Content
+          </label>
+          <div className="mt-1">
+            <MarkdownEditor
+              value={b}
+              onChange={setB}
+              disabled={busy}
+              minHeight="55vh"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Edit rationale (optional)
+          </label>
+          <Textarea
+            className="mt-1 min-h-[60px] text-sm"
+            placeholder="Why did this section need an edit? Shows up in the review history."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            disabled={busy}
+          />
+        </div>
+      </DialogBody>
+
+      <DialogFooter>
+        <Button variant="ghost" disabled={busy} onClick={onCancel}>
+          Cancel
+        </Button>
         <Button
-          size="sm"
-          disabled={busy || !t.trim() || !b.trim()}
+          disabled={!canSave}
           onClick={() =>
             onSave({
               title: t.trim(),
@@ -317,10 +489,7 @@ function SectionEditor({
         >
           {busy ? "Saving…" : "Save edit"}
         </Button>
-        <Button size="sm" variant="ghost" disabled={busy} onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
-    </div>
+      </DialogFooter>
+    </DialogContent>
   );
 }

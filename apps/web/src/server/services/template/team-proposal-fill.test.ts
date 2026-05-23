@@ -96,6 +96,10 @@ function baseOutputs(): EngineOutputs {
     findings: { bulletList: "" },
     risks: { bulletList: "" },
     recommendations: { bulletList: "" },
+    section: {
+      team_proposal_overview:
+        "Security-heavy team mix reflects identity-and-access dominance in the findings.",
+    },
     generated: { date: "2026-05-10", timestamp: "2026-05-10T00:00:00Z" },
   };
 }

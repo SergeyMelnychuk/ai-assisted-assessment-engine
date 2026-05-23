@@ -111,11 +111,13 @@ Current flags:
 
 `prisma/seed.ts` upserts everything, including stamping each shell as a workspace-default `Template` row with status APPROVED keyed off the per-deliverable-type `TemplateKind`. To ship new content (a new question pack, a new framework, a new shell), drop the file + sidecar and re-run `pnpm db:seed` — no migration needed.
 
-### Customer-uploadable templates (ADR-0018)
+### Customer-uploadable templates (ADR-0018, ADR-0029)
 
 Customers upload `.xlsx` / `.docx` / `.pptx` workbooks; an AI proposer drafts a JSON binding mapping engine outputs to cells/placeholders; humans approve. Lifecycle PROPOSED → APPROVED → DEPRECATED, with archive/delete. The estimation and deliverable workers fill the chosen template best-effort (soft-failure). All filling code is under `src/server/services/template/`.
 
 **`TemplateKind` per deliverable type.** The enum has one kind per `DeliverableType` (`EXECUTIVE_SUMMARY`, `ASSESSMENT_REPORT`, `RISK_REGISTER`, `TARGET_STATE`, `ROADMAP`, `TEAM_PROPOSAL`, `ESTIMATE`, `ASSUMPTIONS_GAPS`, `SOW_DRAFT`, `GREENFIELD_DISCOVERY`), plus the legacy generic kinds (`DELIVERABLE_REPORT` / `DELIVERABLE_PRESENTATION`) kept as fallbacks for older rows. Resolution in `fillAndStoreForAssessment`: exact-kind match first, then format-matching legacy fallback, then null. The Deliverables UI only lists types where an APPROVED template is available — `template.deliverableTypesWithTemplates` returns that set.
+
+**AI-section field family (ADR-0029).** Bindings can reference AI-written deliverable section bodies via `field: "section.<key>"`. The filler resolves these by reading the latest `DeliverableSection` row for the assessment + deliverable type — same artefact the Deliverables UI surfaces as section cards. Section keys are declared per deliverable type in `packages/knowledge-seed/deliverable-templates/<key>.json`; the workspace-default shells in `deliverable-shells/` use `{{section_<key>}}` placeholder tokens to land AI prose in `.docx` / `.pptx` / `.xlsx` outputs alongside structured engine data. The binding proposer reads the per-type section catalog when drafting bindings for customer uploads, so new uploads automatically bind narrative-shaped tokens to `section.<key>` instead of raw `*.bulletList` engine dumps.
 
 ### Per-domain evidence tagging
 
@@ -173,7 +175,7 @@ The README is the entry point. The deep references:
 
 - `docs/design/product-design.md` — product domain model, MVP scope, non-goals (1600+ lines).
 - `docs/architecture/README.md` — full technical architecture rationale.
-- `docs/architecture/decisions/` — numbered ADRs (0001–0028), immutable once accepted. Read these before changing the things they describe (ingest decoupling, RAG, archive gates, PAT encryption, evidence trail, prompt caching, agent harness, multi-provider routing, template binding, background-job lifecycle, soft-failure, workflow planner, credential vault, DB-backed feature flags, per-domain tagging, engagement deletion + MinIO sweep, agent trace viewer, hybrid retrieval, evidence citations).
+- `docs/architecture/decisions/` — numbered ADRs (0001–0029), immutable once accepted. Read these before changing the things they describe (ingest decoupling, RAG, archive gates, PAT encryption, evidence trail, prompt caching, agent harness, multi-provider routing, template binding, background-job lifecycle, soft-failure, workflow planner, credential vault, DB-backed feature flags, per-domain tagging, engagement deletion + MinIO sweep, agent trace viewer, hybrid retrieval, evidence citations, deliverable-section field family).
 - `docs/guides/running-locally.md` — environment, ports, services.
 - `docs/guides/engagements.md` — consultant-facing engagement handbook: create flow, workspace tabs, members/access, status lifecycle, archive vs delete.
 - `docs/guides/knowledge-base.md` — human-readable KB guide: artifact families, per-assessment question selection, what feeds AI vs what fills output containers, edit workflow.

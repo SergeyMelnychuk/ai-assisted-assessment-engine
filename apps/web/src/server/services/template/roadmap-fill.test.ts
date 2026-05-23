@@ -21,9 +21,11 @@ import type { EngineOutputs } from "./engine-outputs";
  *   - every `{{token}}` from the binding is gone from every slide
  *     XML in the output.
  *
- * Per-phase scope (slides 3-5) is human-authored — the engine doesn't
- * expose per-phase splits — so those slides only carry the
- * engagement-level totals tokens, not phase-specific ones.
+ * Per-phase scope (slides 3-5) is filled with AI-written narrative via
+ * the `section.phase_<N>_scope` fields, which `loadEngineOutputs`
+ * populates from the latest `Deliverable.sections` row for the
+ * assessment. The milestones panel on slide 6 is filled with an AI-
+ * written milestones list via `section.milestones_owners`.
  */
 
 // Resolve paths relative to this test file so vitest's cwd doesn't
@@ -90,6 +92,16 @@ function baseOutputs(overrides: Partial<EngineOutputs> = {}): EngineOutputs {
     risks: { bulletList: "- [HIGH/delivery] Vendor dependency on legacy SDK" },
     recommendations: {
       bulletList: "- [P1/security] Roll out MFA across the admin estate",
+    },
+    section: {
+      phase_1_scope:
+        "Foundation: lock down auth + observability before any new build work.",
+      phase_2_scope:
+        "Build: ship the new payment integration and harden the API gateway.",
+      phase_3_scope:
+        "Scale: ops handoff, SLO governance, retire legacy adapters.",
+      milestones_owners:
+        "- Phase 1 · Identity baseline — SSO + MFA enforced\n- Phase 2 · Payment go-live — first wave of merchants",
     },
     generated: { date: "2026-05-10", timestamp: "2026-05-10T00:00:00Z" },
     ...overrides,

@@ -47,7 +47,10 @@ import {
   getObjectStream,
   putObject,
 } from "@/server/storage/minio";
-import { enqueueIngestDocument } from "@/server/queue/queue";
+import {
+  enqueueIngestDiagram,
+  enqueueIngestDocument,
+} from "@/server/queue/queue";
 
 // ─── Limits ─────────────────────────────────────────────────────
 
@@ -847,7 +850,37 @@ async function fanOutChild(
     where: { id: child.id },
     data: { storagePath: key },
   });
-  await enqueueIngestDocument(child.id);
+  // Image files in a repo archive — diagrams, screenshots, logos — must
+  // NOT go through `ingest-document`'s text-extraction path. PNG/JPEG
+  // bytes contain plenty of ` ` characters which Postgres rejects
+  // (error 22021) when the chunked "text" hits the Evidence raw-SQL
+  // insert. Route them through `ingest-diagram` instead so Claude
+  // vision gets a shot at them, and so binary garbage never reaches the
+  // text pipeline. Everything else stays on `ingest-document`.
+  if (isImageExtension(walked.entry.path)) {
+    await enqueueIngestDiagram(child.id);
+  } else {
+    await enqueueIngestDocument(child.id);
+  }
+}
+
+/**
+ * Whether a path's extension is an image format the diagram-ingest
+ * worker can handle (Claude vision for raster, XML reasoning for SVG).
+ * Kept narrow on purpose — fonts, video, audio, executables, etc.
+ * still flow to `ingest-document` where they'll either extract empty
+ * text (cheap, harmless) or get null-byte-stripped at the SQL boundary.
+ */
+function isImageExtension(p: string): boolean {
+  const ext = path.posix.extname(p).toLowerCase();
+  return (
+    ext === ".png" ||
+    ext === ".jpg" ||
+    ext === ".jpeg" ||
+    ext === ".gif" ||
+    ext === ".webp" ||
+    ext === ".svg"
+  );
 }
 
 function safePath(p: string): string {

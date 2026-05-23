@@ -1,7 +1,7 @@
 {
   "version": 1,
   "templateKind": "ROADMAP",
-  "notes": "Hand-authored workspace-default binding for the Roadmap v1 deck (6 slides: cover, phasing rationale, Phase 1, Phase 2, Phase 3, milestones & owners). The cover and phasing-rationale slides surface engine totals (effort hours, cost, scenario, assumptions) and engagement context. Per-phase scope on slides 3-5 is consultant-authored — the engine does not expose per-phase splits, so each phase slide carries a static 'Phase N: ' heading and a single empty body bullet for human fill. Milestones reuse the engine's recommendations bullet list as a starting point; the owner table is intentionally blank for the team to fill in. seed: {\"name\":\"Roadmap\",\"version\":\"v1\",\"kind\":\"ROADMAP\"}",
+  "notes": "Hand-authored workspace-default binding for the Roadmap v1 deck (6 slides: cover, phasing rationale, Phase 1, Phase 2, Phase 3, milestones & owners). The cover and phasing-rationale slides surface engine totals (effort hours, cost, scenario, assumptions) and engagement context. Per-phase scope on slides 3-5 is filled with AI-written narrative via `section.phase_<N>_scope` (sections declared in `deliverable-templates/roadmap.json`). The milestones panel on slide 6 is filled with AI-synthesised milestones via `section.milestones_owners` — replaces the previous raw recommendations-bulletList dump. The owners table on slide 6 is intentionally blank for the team to fill in. seed: {\"name\":\"Roadmap\",\"version\":\"v1\",\"kind\":\"ROADMAP\"}",
   "entries": [
     {
       "field": "project.name",
@@ -64,10 +64,28 @@
       "note": "Phasing-rationale assumptions block."
     },
     {
-      "field": "recommendations.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{recommendations_bullets}}" },
-      "format": "list",
-      "note": "Milestones & owners slide — recommended-milestones panel seeded from the engine's recommendations."
+      "field": "section.phase_1_scope",
+      "target": { "kind": "docx.placeholder", "token": "{{section_phase_1_scope}}" },
+      "format": "auto",
+      "note": "AI-written Phase 1 (Foundation) scope narrative."
+    },
+    {
+      "field": "section.phase_2_scope",
+      "target": { "kind": "docx.placeholder", "token": "{{section_phase_2_scope}}" },
+      "format": "auto",
+      "note": "AI-written Phase 2 (Build) scope narrative."
+    },
+    {
+      "field": "section.phase_3_scope",
+      "target": { "kind": "docx.placeholder", "token": "{{section_phase_3_scope}}" },
+      "format": "auto",
+      "note": "AI-written Phase 3 (Scale) scope narrative."
+    },
+    {
+      "field": "section.milestones_owners",
+      "target": { "kind": "docx.placeholder", "token": "{{section_milestones_owners}}" },
+      "format": "auto",
+      "note": "AI-synthesised milestones (curated from CRITICAL/HIGH recommendations) — replaces the previous raw recommendations.bulletList dump."
     },
     {
       "field": "generated.date",

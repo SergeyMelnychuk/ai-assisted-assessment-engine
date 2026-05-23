@@ -1,7 +1,7 @@
 {
   "version": 1,
   "templateKind": "RISK_REGISTER",
-  "notes": "Hand-authored workspace-default binding for the Risk Register v1 workbook. seed: {\"name\":\"Risk Register\",\"version\":\"v1\",\"kind\":\"RISK_REGISTER\"}. Cover-sheet cells carrying the literal «bind» token and the yellow fill are filled by the engine; everything else is left blank for human authorship. Per-row Risk fields on the 'Risks' sheet (Title, Category, Severity, Likelihood, Description, Mitigation, Owner, Status) are intentionally NOT bound: the engine today exposes only `risks.bulletList` (no per-risk structured fields), so we surface the full bullet list in a single cell on the Cover labelled 'All risks (engine output)' and leave the structured table for the reviewer to fill. Best practice is to be honest about what the AI can and cannot fill — pretending to populate columns the engine has no source for would mislead the human reviewer.",
+  "notes": "Hand-authored workspace-default binding for the Risk Register v1 workbook. seed: {\"name\":\"Risk Register\",\"version\":\"v1\",\"kind\":\"RISK_REGISTER\"}. Cover-sheet cells carrying the literal «bind» token and the yellow fill are filled by the engine; everything else is left blank for human authorship. Per-row Risk fields on the 'Risks' sheet (Title, Category, Severity, Likelihood, Description, Mitigation, Owner, Status) are intentionally NOT bound — the engine has no per-risk structured fields. The Cover 'risk overview' cell is filled with AI-written prose via `section.risk_overview` (declared in `deliverable-templates/risk-register.json`); previous binding dumped the raw `risks.bulletList` engine output which produced unreadable `[severity/category]`-prefixed lines.",
   "entries": [
     {
       "field": "project.name",
@@ -46,10 +46,10 @@
       "note": "Cover > Totals > Risks identified count."
     },
     {
-      "field": "risks.bulletList",
+      "field": "section.risk_overview",
       "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "A15" },
       "format": "auto",
-      "note": "Cover > All risks (engine output) — single merged cell holding the engine's full bullet list. Per-row Risk fields on the Risks sheet are deliberately unbound (see top-level notes)."
+      "note": "Cover > Risk overview — AI-written narrative summary + cross-cutting themes. Replaces the previous risks.bulletList raw dump. Per-row Risk fields on the Risks sheet are deliberately unbound (see top-level notes)."
     }
   ]
 }

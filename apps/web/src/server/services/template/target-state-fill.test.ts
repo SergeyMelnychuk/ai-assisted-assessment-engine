@@ -72,6 +72,13 @@ function baseOutputs(overrides: Partial<EngineOutputs> = {}): EngineOutputs {
     recommendations: {
       bulletList: "- [HIGH/Architecture] Move to event-driven core",
     },
+    section: {
+      target_state_findings_drivers: "- Stale schemas slow every release.",
+      target_state_risks_drivers: "- Vendor lock-in blocks the migration.",
+      target_state_narrative: "Target-state architecture narrative.",
+      target_state_recommendations: "- Adopt a schema registry.",
+      target_state_transition_risks: "- Cutover risk during the migration.",
+    },
     generated: { date: "2026-05-10", timestamp: "2026-05-10T00:00:00Z" },
     ...overrides,
   };

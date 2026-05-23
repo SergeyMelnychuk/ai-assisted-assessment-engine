@@ -7,6 +7,7 @@ import {
 } from "@/server/authz";
 import { deleteObject } from "@/server/storage/minio";
 import {
+  documentQueue,
   enqueueIngestDiagram,
   enqueueIngestDocument,
 } from "@/server/queue/queue";
@@ -153,13 +154,46 @@ export const documentRouter = createRouter({
         },
       });
 
+      // BullMQ keeps failed jobs in Redis (`removeOnFail: { count: 500 }`
+      // in `queue.ts`) and `documentQueue.add()` silently no-ops when a
+      // job with the same deterministic jobId already exists. Without
+      // this cleanup, Retry would flip the DB row to PENDING but never
+      // produce a runnable job — the doc would stay stuck in "Queued"
+      // forever. We drop *both* possible jobIds because `uploadType`
+      // could change between attempts (e.g. an image originally routed
+      // to `ingest-document` may now route to `ingest-diagram`).
+      for (const staleJobId of [`doc-${doc.id}`, `diag-${doc.id}`]) {
+        try {
+          const stale = await documentQueue.getJob(staleJobId);
+          if (stale) {
+            await stale.remove();
+          }
+        } catch {
+          // Best-effort: a stale job that's currently active can throw
+          // on remove(); the subsequent add() will then dedupe to that
+          // active job, which is acceptable (it's already running).
+        }
+      }
+
       // Same routing logic as the upload handler. We don't re-sample S3
       // content here because the filename+mime+uploadType combo has
       // already proven enough.
+      //
+      // Mime alone isn't enough for repo-tarball children: the archive
+      // walker only knows a small whitelist of mime types and falls
+      // through to `application/octet-stream` for everything else
+      // (including PNG/JPEG before the routing fix landed). Fall back
+      // to the filename extension so PNGs uploaded inside a repo
+      // tarball reprocess as diagrams instead of bouncing into the
+      // text-extraction pipeline (which crashes on binary content).
+      const mimeFormat = guessFormatFromMime(doc.mimeType);
+      const filenameFormat = guessFormatFromFilename(doc.filename);
       const treatAsDiagram =
         doc.uploadType.startsWith("DIAGRAM_") ||
-        isTextBasedDiagram(guessFormatFromMime(doc.mimeType)) ||
-        isImageDiagram(guessFormatFromMime(doc.mimeType));
+        isTextBasedDiagram(mimeFormat) ||
+        isImageDiagram(mimeFormat) ||
+        isTextBasedDiagram(filenameFormat) ||
+        isImageDiagram(filenameFormat);
 
       if (treatAsDiagram) {
         await enqueueIngestDiagram(doc.id);
@@ -273,5 +307,18 @@ function guessFormatFromMime(mime: string) {
   if (mime === "image/png") return "PNG" as const;
   if (mime === "image/jpeg") return "JPEG" as const;
   if (mime === "image/svg+xml") return "SVG" as const;
+  return "OTHER" as const;
+}
+
+// Filename-based fallback for repo-tarball children whose mime got
+// stamped as `application/octet-stream` by the archive walker. Only
+// covers the image formats `isImageDiagram` recognises — extending
+// this to text-diagram extensions (`.mmd`, `.puml`) is straightforward
+// if it ever matters.
+function guessFormatFromFilename(filename: string) {
+  const lower = filename.toLowerCase();
+  if (lower.endsWith(".png")) return "PNG" as const;
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "JPEG" as const;
+  if (lower.endsWith(".svg")) return "SVG" as const;
   return "OTHER" as const;
 }

@@ -74,6 +74,10 @@ function baseOutputs(overrides: Partial<EngineOutputs> = {}): EngineOutputs {
         "- [LOW/PROCESS] Manual release cadence",
     },
     recommendations: { bulletList: "" },
+    section: {
+      risk_overview:
+        "Five risks identified across the engagement. Two are HIGH severity; both centre on auth + rollback maturity.\n\n- Identity & access — three risks span MFA, SSO, secrets.\n- Operational readiness — rollback and observability gaps.",
+    },
     generated: { date: "2026-05-10", timestamp: "2026-05-10T00:00:00Z" },
     ...overrides,
   };

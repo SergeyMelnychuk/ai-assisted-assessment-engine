@@ -100,6 +100,10 @@ function baseOutputs(): EngineOutputs {
     findings: { bulletList: "" },
     risks: { bulletList: "" },
     recommendations: { bulletList: "" },
+    section: {
+      estimate_overview:
+        "Mid-confidence estimate driven by security + identity work.",
+    },
     generated: { date: "2026-05-10", timestamp: "2026-05-10T00:00:00Z" },
   };
 }

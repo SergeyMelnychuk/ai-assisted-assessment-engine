@@ -1,7 +1,7 @@
 {
   "version": 1,
   "templateKind": "ASSESSMENT_REPORT",
-  "notes": "Workspace-default binding for the Assessment Report v1 Word shell. The shell carries 10 sections (cover, executive summary, engagement context, current state, findings, risks, recommendations, target state, roadmap, assumptions, appendix). Each section opens with a heading + framing paragraph and embeds {{token}} placeholders for the engine fields. Tokens are typed once each in the document body; some tokens (project_name, scenario_name, generated_date, *_count) are reused across sections — the docx filler does global string replace so a single binding entry per token is enough. seed: {\"name\":\"Assessment Report\",\"version\":\"v1\",\"kind\":\"ASSESSMENT_REPORT\"}",
+  "notes": "Workspace-default binding for the Assessment Report v1 Word shell. The shell carries 10 sections (cover, executive summary, engagement context, current state, findings, risks, recommendations, target state, roadmap, assumptions, appendix). Engine fills cover + cross-section metadata; AI writes the prose for executive_summary, engagement_context, current_state, key_findings, risks, recommendations, target_state, team_and_estimate via `section.<key>` fields (declared in `deliverable-templates/assessment-report.json`). Previous binding mapped findings/risks/recommendations to `*.bulletList` raw dumps with internal '[severity/domain]' prefixes — that produced unreadable narrative. seed: {\"name\":\"Assessment Report\",\"version\":\"v1\",\"kind\":\"ASSESSMENT_REPORT\"}",
   "entries": [
     {
       "field": "project.name",
@@ -94,22 +94,52 @@
       "note": "Executive summary + Appendix — currency code."
     },
     {
-      "field": "findings.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{findings_bullets}}" },
-      "format": "list",
-      "note": "Findings section — pre-formatted multi-line bullet list from the engine."
+      "field": "section.executive_summary",
+      "target": { "kind": "docx.placeholder", "token": "{{section_executive_summary}}" },
+      "format": "auto",
+      "note": "AI-written one-page executive summary."
     },
     {
-      "field": "risks.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{risks_bullets}}" },
-      "format": "list",
-      "note": "Risks section — pre-formatted multi-line bullet list from the engine."
+      "field": "section.engagement_context",
+      "target": { "kind": "docx.placeholder", "token": "{{section_engagement_context}}" },
+      "format": "auto",
+      "note": "AI-written engagement context + approach narrative."
     },
     {
-      "field": "recommendations.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{recommendations_bullets}}" },
-      "format": "list",
-      "note": "Recommendations section — pre-formatted multi-line bullet list from the engine."
+      "field": "section.current_state",
+      "target": { "kind": "docx.placeholder", "token": "{{section_current_state}}" },
+      "format": "auto",
+      "note": "AI-written current-state overview."
+    },
+    {
+      "field": "section.key_findings",
+      "target": { "kind": "docx.placeholder", "token": "{{section_key_findings}}" },
+      "format": "auto",
+      "note": "AI-written top findings narrative — replaces the previous findings.bulletList raw dump."
+    },
+    {
+      "field": "section.risks",
+      "target": { "kind": "docx.placeholder", "token": "{{section_risks}}" },
+      "format": "auto",
+      "note": "AI-written risk register narrative — replaces the previous risks.bulletList raw dump."
+    },
+    {
+      "field": "section.recommendations",
+      "target": { "kind": "docx.placeholder", "token": "{{section_recommendations}}" },
+      "format": "auto",
+      "note": "AI-written recommendations + roadmap — replaces the previous recommendations.bulletList raw dump."
+    },
+    {
+      "field": "section.target_state",
+      "target": { "kind": "docx.placeholder", "token": "{{section_target_state}}" },
+      "format": "auto",
+      "note": "AI-written target-state direction narrative."
+    },
+    {
+      "field": "section.team_and_estimate",
+      "target": { "kind": "docx.placeholder", "token": "{{section_team_and_estimate}}" },
+      "format": "auto",
+      "note": "AI-written team composition + estimate context (engine fills the numbers separately)."
     },
     {
       "field": "assessment.findingsCount",

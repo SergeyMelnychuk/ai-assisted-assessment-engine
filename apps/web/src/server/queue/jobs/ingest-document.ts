@@ -330,16 +330,28 @@ export async function insertEvidenceRowsWithEmbeddings(
     placeholders.push(
       `($${p++}, $${p++}, $${p++}::"EvidenceSourceType", $${p++}, $${p++}, $${p++}, $${p++}, $${p++}, $${p++}::jsonb, $${p++}, ${vectorLiteral}, NOW())`,
     );
+    // Postgres TEXT columns reject `\u0000` with error code 22021
+    // ("invalid byte sequence for encoding UTF8: 0x00"). The byte
+    // sneaks in when the text-extraction pipeline runs over a binary
+    // payload that slipped past the routing filter (e.g. a PNG from a
+    // repo tarball whose mime fell through to application/octet-stream).
+    // We can't recover useful semantics from those chunks, but we can
+    // sanitize them so the whole transaction doesn't fail and the
+    // surrounding rows still land. The archive walker now routes
+    // images to `ingest-diagram` upstream — this strip is a backstop
+    // for anything else that ever produces a 0x00 byte.
+    const safeContent = stripNullBytes(chunk.content);
+    const safeChunkSource = stripNullBytes(chunkSource);
     values.push(
       id,
       assessmentId,
       "DOCUMENT",
       documentId,
-      chunk.content,
+      safeContent,
       domain,
       confidence,
       chunk.index,
-      chunkSource,
+      safeChunkSource,
       chunk.contentSha,
     );
   }
@@ -349,6 +361,18 @@ export async function insertEvidenceRowsWithEmbeddings(
   // template + parameter placeholders; user-supplied values flow
   // through `values` which are bound, not concatenated.
   await tx.$executeRawUnsafe(sql, ...values);
+}
+
+/**
+ * Strip ASCII NUL characters (0x00) from a string before it's bound
+ * into a Postgres TEXT parameter. Postgres rejects null bytes with
+ * error 22021; they're meaningless in text content anyway. Used as a
+ * defensive last-mile sanitizer in the raw-SQL evidence insert path.
+ */
+function stripNullBytes(s: string): string {
+  // Fast-path: most strings won't have any. `indexOf` is a hot-loop
+  // pre-check that avoids allocating a new string when not needed.
+  return s.indexOf("\u0000") === -1 ? s : s.replace(/\u0000/g, "");
 }
 
 /**

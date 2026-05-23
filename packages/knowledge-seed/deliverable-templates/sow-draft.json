@@ -1,0 +1,24 @@
+{
+  "key": "sow_draft",
+  "name": "SOW Draft",
+  "description": "Statement of Work draft for legal review. Mostly legal boilerplate + engine-filled engagement facts. AI writes the in-scope description and the deliverables summary so the legal team has a concrete starting point shaped by the actual engagement findings.",
+  "deliverableType": "SOW_DRAFT",
+  "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "AUDIT", "PRE_IMPLEMENTATION", "GREENFIELD"],
+  "sections": [
+    {
+      "key": "sow_scope",
+      "title": "In-scope services",
+      "purpose": "3–5 sentences describing the services in scope of this SOW. Anchor concretely in the engagement's recommendations + target-state direction. Use professional commercial language suitable for a client-facing legal document. Avoid product names unless they're commercially agreed. No bullet lists — flowing prose only.",
+      "targetLength": "short",
+      "audience": "Client legal + sponsor"
+    },
+    {
+      "key": "sow_deliverables_summary",
+      "title": "Deliverables summary",
+      "purpose": "3–5 markdown bullets enumerating the proposed deliverables for this engagement, derived from the assessment outputs (e.g. 'Target-state architecture', 'Risk register', 'Implementation roadmap'). Each bullet: deliverable name + one-line description of its content. Do NOT invent acceptance dates or rework allowances — that's legal's job downstream.",
+      "targetLength": "short",
+      "audience": "Client legal + sponsor"
+    }
+  ],
+  "diagrams": []
+}

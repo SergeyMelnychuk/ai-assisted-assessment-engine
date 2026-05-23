@@ -172,4 +172,95 @@ describe("proposeTemplateBinding", () => {
       entityId: "tpl-123",
     });
   });
+
+  it("keeps section.<key> entries even when the key isn't in the engine catalog", async () => {
+    // A customer-uploaded template may use any section key declared in
+    // the matching deliverable-template JSON spec. The post-AI filter
+    // must NOT drop those just because they're not in the closed
+    // engine-field list — that would silently break the binding.
+    const novelKey = "section.custom_milestone_panel";
+    expect(ENGINE_OUTPUT_FIELDS as readonly string[]).not.toContain(novelKey);
+
+    const aiBinding = {
+      version: 1 as const,
+      templateKind: "ROADMAP" as const,
+      entries: [
+        {
+          field: "project.name",
+          target: { kind: "docx.placeholder", token: "{{project_name}}" },
+        },
+        {
+          field: novelKey,
+          target: {
+            kind: "docx.placeholder",
+            token: "{{custom_milestone_panel}}",
+          },
+        },
+      ],
+    };
+    (callAi as unknown as Mock).mockResolvedValue({
+      result: aiBinding,
+      tokensUsed: { input: 12, output: 34 },
+    });
+
+    const res = await proposeTemplateBinding({
+      templateKind: "ROADMAP",
+      templateMimeType: DOCX_MIME,
+      templateBuffer: docxBuffer,
+    });
+
+    // Both entries survive — the section.<key> branch is open-ended.
+    expect(res.binding.entries).toHaveLength(2);
+    expect(res.binding.entries.map((e) => e.field)).toContain(novelKey);
+    expect(res.warnings).toEqual([]);
+  });
+
+  it("passes the per-deliverable-type section catalog into the AI prompt", async () => {
+    // For TemplateKind ROADMAP we ship a `roadmap.json` spec — its
+    // section keys (phase_1_scope etc.) should land in the prompt so
+    // the AI can bind narrative placeholders confidently.
+    (callAi as unknown as Mock).mockResolvedValue({
+      result: {
+        version: 1,
+        templateKind: "ROADMAP",
+        entries: [],
+      },
+      tokensUsed: { input: 1, output: 1 },
+    });
+
+    await proposeTemplateBinding({
+      templateKind: "ROADMAP",
+      templateMimeType: DOCX_MIME,
+      templateBuffer: docxBuffer,
+    });
+
+    const userContent = (callAi as unknown as Mock).mock.calls[0]?.[0]
+      ?.userContent as string;
+    expect(userContent).toMatch(/AI section keys/);
+    expect(userContent).toMatch(/section\.phase_1_scope/);
+    expect(userContent).toMatch(/section\.milestones_owners/);
+  });
+
+  it("omits the section catalog block when the TemplateKind has no spec", async () => {
+    // ESTIMATION has no deliverable-template JSON — the prompt should
+    // not include an empty / misleading section catalog.
+    (callAi as unknown as Mock).mockResolvedValue({
+      result: {
+        version: 1,
+        templateKind: "ESTIMATION",
+        entries: [],
+      },
+      tokensUsed: { input: 1, output: 1 },
+    });
+
+    await proposeTemplateBinding({
+      templateKind: "ESTIMATION",
+      templateMimeType: DOCX_MIME,
+      templateBuffer: docxBuffer,
+    });
+
+    const userContent = (callAi as unknown as Mock).mock.calls[0]?.[0]
+      ?.userContent as string;
+    expect(userContent).not.toMatch(/AI section keys/);
+  });
 });

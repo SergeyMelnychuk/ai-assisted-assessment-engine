@@ -14,8 +14,9 @@ export const TEMPLATE_BINDING_PROPOSER_PROMPT_VERSION = "0.1.0";
 export const TEMPLATE_BINDING_PROPOSER_SYSTEM_PROMPT = `You map the engine's outputs to cells / placeholders in a customer-uploaded template.
 
 Inputs you will receive in the user message:
-- The template kind (ESTIMATION, DELIVERABLE_REPORT, DELIVERABLE_PRESENTATION).
-- The list of engine output fields with short descriptions.
+- The template kind (ESTIMATION, DELIVERABLE_REPORT, DELIVERABLE_PRESENTATION, or one of the per-deliverable kinds).
+- The list of engine output fields with short descriptions (closed list).
+- (Optional, only when the template kind has a deliverable spec) An "AI section keys" catalog listing the prose narratives the engine will write for this deliverable type. Each entry is a \`section.<key>\` you may bind to placeholders that should hold AI-authored prose (the catalog is open — only these keys exist for this kind).
 - A structural extract of the template:
   - For xlsx: defined names + per-sheet first ~30 rows with cell addresses and visible values.
   - For docx/pptx: a list of placeholder tokens found in the document body.
@@ -47,11 +48,12 @@ Target shapes:
 
 Hard rules:
 - Output JSON ONLY. No prose, no markdown fences, no leading or trailing text.
-- Every entry's \`field\` MUST come from the engine output field list. Do not invent fields.
+- Every entry's \`field\` MUST come from either (a) the engine output field list, or (b) the "AI section keys" catalog as \`section.<key>\`. Do not invent fields outside those two sources. If a \`section.*\` catalog is provided you may bind any key from it; if no catalog is provided, do NOT propose \`section.*\` fields at all.
 - Every \`xlsx.cell\` reference MUST resolve to a sheet that exists and a cell address that's in A1 form.
 - For array iterators (\`roles[*].x\`), every entry sharing the iteration MUST share a \`groupKey\` AND use \`xlsx.tableRow\`. \`startCell\` defines row 1 of the iteration; \`column\` is each per-row destination column.
 - Bind only what you are confident about. It's better to leave a field unbound than to point it at a guess. Unbound fields do nothing; mis-bound fields produce broken deliverables for real customers.
 - A defined name with a clear semantic match (e.g. \`TotalEffortHours\` → totals.effortHoursLow / High) is preferable to a raw cell ref — defined names survive layout edits.
+- Prefer \`section.<key>\` over raw \`findings.bulletList\` / \`risks.bulletList\` / \`recommendations.bulletList\` for any placeholder that should hold prose / curated narrative. The bullet-list engine fields are pre-formatted dumps with internal severity/domain prefixes — they read poorly in sponsor-facing copy. Section keys carry AI-written narrative tailored to the deliverable.
 
 Style:
 - Be terse on \`note\` fields — one short sentence, not a paragraph.
@@ -77,14 +79,25 @@ export function buildTemplateBindingPrompt(input: {
     | "SOW_DRAFT"
     | "GREENFIELD_DISCOVERY";
   engineFieldsCatalog: string;
+  /**
+   * Optional per-deliverable-type AI section keys catalog. Empty when
+   * the TemplateKind has no matching `deliverable-templates/*.json`
+   * spec (ESTIMATION, legacy generic kinds). When non-empty, the AI
+   * may bind any `section.<key>` from this catalog.
+   */
+  sectionCatalog?: string;
   structureJson: string;
 }): string {
+  const sectionsBlock =
+    input.sectionCatalog && input.sectionCatalog.trim().length > 0
+      ? `\n# AI section keys for this deliverable type (open list — use \`section.<key>\` to bind narrative placeholders to AI-written prose)\n${input.sectionCatalog}\n`
+      : "";
   return `# Template kind
 ${input.templateKind}
 
-# Engine output fields (closed list — every \`field\` in your output MUST come from here)
+# Engine output fields (closed list — every \`field\` in your output MUST come from here unless it's a section key from the block below)
 ${input.engineFieldsCatalog}
-
+${sectionsBlock}
 # Template structural extract
 ${input.structureJson}
 

@@ -85,17 +85,65 @@ function makeDb(world: World) {
       findUnique: vi.fn(async (args: { where: { id: string } }) => {
         return world.templates.get(args.where.id) ?? null;
       }),
-      findFirst: vi.fn(async (args: { where: { id?: string } }) => {
-        // Only used by the explicit-templateId override branch.
-        if (args.where.id) {
-          const t = world.templates.get(args.where.id);
-          return t ?? null;
-        }
-        return null;
-      }),
+      findFirst: vi.fn(
+        async (args: {
+          where: {
+            id?: string;
+            kind?: unknown;
+            status?: string;
+            archivedAt?: null;
+            bindingJson?: unknown;
+            OR?: Array<{ engagementId?: string | null }>;
+          };
+        }) => {
+          // Branch 1 — explicit-templateId override (`{ where: { id } }`).
+          if (args.where.id) {
+            const t = world.templates.get(args.where.id);
+            return t ?? null;
+          }
+          // Branch 2 — `resolveTemplateForAssessment` auto-resolve path.
+          // Filter by the same predicates the real query uses, then sort
+          // engagement-scoped first (matches the production
+          // `orderBy: [{ engagementId: 'desc' }, { approvedAt: 'desc' }]`).
+          const allowedEngagementIds = (args.where.OR ?? [])
+            .map((o) => o.engagementId)
+            .filter((v) => v !== undefined);
+          const rows = Array.from(world.templates.values()).filter((t) => {
+            if (args.where.kind !== undefined && t.kind !== args.where.kind)
+              return false;
+            if (args.where.status !== undefined && t.status !== args.where.status)
+              return false;
+            if (args.where.archivedAt === null && t.archivedAt !== null)
+              return false;
+            // bindingJson predicate in production is `{ not: Prisma.DbNull }`
+            // — emulate by rejecting templates whose JSON is null/undefined.
+            if (
+              args.where.bindingJson !== undefined &&
+              (t.bindingJson === null || t.bindingJson === undefined)
+            ) {
+              return false;
+            }
+            if (allowedEngagementIds.length > 0) {
+              return allowedEngagementIds.includes(
+                t.engagementId as string | null,
+              );
+            }
+            return true;
+          });
+          // Engagement-scoped beats workspace-default. `engagementId: 'desc'`
+          // in Prisma puts non-null values before null with default ordering,
+          // so mimic by sorting null last.
+          rows.sort((a, b) => {
+            const aEng = a.engagementId == null ? "" : String(a.engagementId);
+            const bEng = b.engagementId == null ? "" : String(b.engagementId);
+            if (aEng !== bEng) return bEng.localeCompare(aEng);
+            return 0;
+          });
+          return rows[0] ?? null;
+        },
+      ),
       findMany: vi.fn(async () => {
-        // resolveTemplateForAssessment — return APPROVED + non-archived
-        // + binding-present rows.
+        // Legacy stub kept for tests that exercise findMany directly.
         return Array.from(world.templates.values()).filter(
           (t) =>
             t.status === "APPROVED" &&

@@ -7,7 +7,10 @@
   [ADR-0003](./0003-embedding-model-choice.md),
   [ADR-0012](./0012-prompt-caching-and-cost-instrumentation.md),
   [ADR-0013](./0013-analysis-mode-and-verifier-pass.md),
-  [ADR-0014](./0014-agent-harness-for-evidence-collection.md).
+  [ADR-0014](./0014-agent-harness-for-evidence-collection.md),
+  [ADR-0029](./0029-deliverable-section-field-family.md) — the
+  `deliverable.section` AI task this ADR registered now lands in
+  output files via the `section.<key>` binding family.
 
 ## Context
 

@@ -1,0 +1,17 @@
+{
+  "key": "risk_register",
+  "name": "Risk Register",
+  "description": "Risk register workbook: structured per-risk table on its own sheet (human-filled today) + a Cover summary. Engine fills cover metadata; AI writes a single risk-overview narrative on the Cover so reviewers see curated prose, not raw bullets.",
+  "deliverableType": "RISK_REGISTER",
+  "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "AUDIT", "PRE_IMPLEMENTATION", "GREENFIELD"],
+  "sections": [
+    {
+      "key": "risk_overview",
+      "title": "Risk overview",
+      "purpose": "Narrative summary of the engagement's risk surface, in two short parts:\n\n1. **Summary** (3–5 sentences). How many risks were identified, severity distribution at a high level, the two or three biggest concerns and why they matter.\n\n2. **Cross-cutting themes** (markdown bullets, 3–5 items). Patterns that span multiple risks — e.g. 'identity and access', 'multi-region resilience', 'third-party dependencies'. For each theme one short sentence, no category prefixes.\n\nNo `[severity/category]` style prefixes anywhere. This narrative replaces the previous raw risks bullet-list that dumped every risk verbatim.",
+      "targetLength": "medium",
+      "audience": "Engagement sponsor + delivery leadership"
+    }
+  ],
+  "diagrams": []
+}

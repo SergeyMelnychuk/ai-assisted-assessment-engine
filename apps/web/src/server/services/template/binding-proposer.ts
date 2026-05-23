@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { callAi, parseJsonResponse } from "../ai/router";
 import {
   TEMPLATE_BINDING_PROPOSER_SYSTEM_PROMPT,
@@ -10,6 +12,68 @@ import {
 } from "./binding";
 import { extractXlsxStructure } from "./structure-extract";
 import type { TemplateKind } from "@prisma/client";
+
+/**
+ * Open-ended `section.<key>` path validator. Section keys are NOT part
+ * of the closed `ENGINE_OUTPUT_FIELDS` list — they come from the
+ * per-deliverable-type spec under
+ * `packages/knowledge-seed/deliverable-templates/`. A customer's
+ * uploaded template can reference any key declared there; this regex
+ * lets the proposer's post-filter accept those novel keys so they
+ * don't get silently dropped.
+ */
+const SECTION_FIELD_PATH = /^section\.[A-Za-z0-9_]+$/;
+
+/**
+ * Load the section specs for the deliverable-template JSON that backs
+ * this TemplateKind. Returns `[]` for kinds that don't correspond to a
+ * deliverable type (ESTIMATION + legacy generic kinds) or when the
+ * spec file is missing — callers handle the empty list gracefully.
+ *
+ * Kept narrow on purpose: the proposer needs section key + title +
+ * purpose to teach the AI the menu of valid `section.<key>` paths.
+ * The full deliverable-template schema (target lengths, audiences,
+ * diagrams) is the deliverable-generator's concern.
+ */
+function loadSectionSpecsForKind(kind: TemplateKind): Array<{
+  key: string;
+  title: string;
+  purpose: string;
+}> {
+  // Map TemplateKind → the JSON spec filename. Kept here rather than
+  // imported from `deliverable-generator` to avoid a worker → web-only
+  // service circular dep.
+  const FILENAME_BY_KIND: Partial<Record<TemplateKind, string>> = {
+    EXECUTIVE_SUMMARY: "executive-summary.json",
+    ASSESSMENT_REPORT: "assessment-report.json",
+    RISK_REGISTER: "risk-register.json",
+    TARGET_STATE: "target-state.json",
+    ROADMAP: "roadmap.json",
+    TEAM_PROPOSAL: "team-proposal.json",
+    ESTIMATE: "estimate-summary.json",
+    ASSUMPTIONS_GAPS: "assumptions-gaps.json",
+    SOW_DRAFT: "sow-draft.json",
+    GREENFIELD_DISCOVERY: "greenfield-discovery.json",
+  };
+  const filename = FILENAME_BY_KIND[kind];
+  if (!filename) return [];
+  const spec_path = path.resolve(
+    process.cwd(),
+    "../../packages/knowledge-seed/deliverable-templates",
+    filename,
+  );
+  if (!fs.existsSync(spec_path)) return [];
+  try {
+    const raw = JSON.parse(fs.readFileSync(spec_path, "utf8")) as {
+      sections?: Array<{ key: string; title: string; purpose: string }>;
+    };
+    return raw.sections ?? [];
+  } catch {
+    // Malformed spec — degrade silently to no-section guidance. The
+    // proposer will still produce a valid binding for engine fields.
+    return [];
+  }
+}
 
 /**
  * Proposes a `BindingDocument` for an uploaded template by handing
@@ -70,6 +134,8 @@ const ENGINE_FIELD_DESCRIPTIONS: Record<string, string> = {
   "recommendations.bulletList": "joined bullet list of all recs",
   "generated.date": "ISO date the fill ran",
   "generated.timestamp": "ISO timestamp the fill ran",
+  "section.<key>":
+    "AI-written deliverable section body keyed by `sectionKey` (defined in the deliverable-template JSON spec). Substitute `<key>` with the actual section key, e.g. `section.executive_summary`, `section.phase_1_scope`. Use this for any placeholder that should hold prose narrative the AI writes, not raw engine data.",
 };
 
 export async function proposeTemplateBinding(
@@ -103,9 +169,27 @@ export async function proposeTemplateBinding(
     (f) => `- \`${f}\` — ${ENGINE_FIELD_DESCRIPTIONS[f] ?? ""}`,
   ).join("\n");
 
+  // Section catalog — the per-deliverable-type list of AI-written
+  // section keys the engine will populate at run-time. The customer's
+  // template can use ANY of these keys via `field: "section.<key>"`;
+  // we feed the list to the AI so it can map narrative-shaped tokens
+  // confidently instead of guessing from the small illustrative
+  // `section.*` entries in `ENGINE_OUTPUT_FIELDS`.
+  const sectionSpecs = loadSectionSpecsForKind(input.templateKind);
+  const sectionCatalog =
+    sectionSpecs.length === 0
+      ? ""
+      : sectionSpecs
+          .map(
+            (s) =>
+              `- \`section.${s.key}\` — ${s.title}. ${s.purpose}`,
+          )
+          .join("\n");
+
   const userTurn = buildTemplateBindingPrompt({
     templateKind: input.templateKind,
     engineFieldsCatalog: fieldCatalog,
+    sectionCatalog,
     structureJson,
   });
 
@@ -159,10 +243,16 @@ export async function proposeTemplateBinding(
     };
   }
 
-  // Drop entries whose field isn't in the closed list (defensive — the
-  // prompt forbids it but the model can still hallucinate).
+  // Drop entries whose field is neither in the engine catalog nor a
+  // well-formed `section.<key>` path. The section family is open-ended:
+  // a customer template can declare any key in its deliverable-template
+  // spec (we don't enforce membership here — missing keys surface as
+  // runtime warnings from the filler, which is more diagnostic than a
+  // silent post-AI drop).
   const knownFields = new Set<string>(ENGINE_OUTPUT_FIELDS);
-  const filtered = parsed.data.entries.filter((e) => knownFields.has(e.field));
+  const filtered = parsed.data.entries.filter(
+    (e) => knownFields.has(e.field) || SECTION_FIELD_PATH.test(e.field),
+  );
   const dropped = parsed.data.entries.length - filtered.length;
   return {
     binding: {

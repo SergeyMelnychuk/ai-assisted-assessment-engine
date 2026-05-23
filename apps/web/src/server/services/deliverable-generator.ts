@@ -812,3 +812,180 @@ export async function regenerateDiagram(
 
   return { diagramId, sourceCode: res.sourceCode };
 }
+
+// ─── Section regeneration ────────────────────────────────────────
+
+/**
+ * Regenerate a single deliverable section, optionally with reviewer
+ * feedback ("more detail on cost", "rewrite for an executive audience").
+ * Mirrors `regenerateDiagram`: one AI call, replaces the draft in place,
+ * leaves every other section + diagram untouched.
+ *
+ * Semantics:
+ *   - Writes only to `contentDraft`. If the section was previously
+ *     published (`contentFinal` set + `reviewStatus = APPROVED`), we
+ *     clear `contentFinal` and reset `reviewStatus = DRAFT` so the new
+ *     draft is the version the UI surfaces and a fresh review is
+ *     required before re-approving. Matches the diagram-regen "replace
+ *     the source" behaviour.
+ *   - The section's template spec is looked up by `(deliverableType,
+ *     assessment.mode)` and matched by `sectionKey`. If the seed
+ *     template has changed and no spec matches anymore, we fall back to
+ *     the section row's own title as a minimal spec — same defensive
+ *     posture as `synthesiseGenericTemplate`.
+ */
+export async function regenerateSection(
+  db: PrismaClient,
+  sectionId: string,
+  feedback?: string,
+): Promise<{ sectionId: string; contentDraft: string }> {
+  const section = await db.deliverableSection.findUnique({
+    where: { id: sectionId },
+    include: {
+      deliverable: {
+        include: {
+          assessment: {
+            include: { projectContext: true, assessmentType: true },
+          },
+          diagrams: {
+            select: { title: true, diagramType: true },
+          },
+        },
+      },
+    },
+  });
+  if (!section) throw new Error(`Section ${sectionId} not found`);
+  const { deliverable } = section;
+  const { assessment } = deliverable;
+
+  // Find the template spec for this section. Fall back to the row's own
+  // metadata if the seed template no longer carries this key — better
+  // than throwing on a stale section.
+  const template = pickTemplate(
+    deliverable.deliverableType,
+    assessment.mode,
+  );
+  const spec: SectionSpec =
+    template.sections.find((s) => s.key === section.sectionKey) ?? {
+      key: section.sectionKey,
+      title: section.title,
+      purpose: section.title,
+      targetLength: "medium",
+      audience: "stakeholders",
+    };
+
+  // Pull the same assessment context the full-run uses, so the
+  // regenerated section sees a fresh snapshot (findings / risks / scores
+  // may have changed since the original generation).
+  const [findings, risks, recommendations, domainScores, assumptions, teamProposals, latestEstimate] =
+    await Promise.all([
+      db.finding.findMany({
+        where: { assessmentId: assessment.id },
+        orderBy: [{ severity: "asc" }, { domain: "asc" }],
+        take: 40,
+      }),
+      db.risk.findMany({
+        where: { assessmentId: assessment.id },
+        orderBy: { severity: "asc" },
+        take: 40,
+      }),
+      db.recommendation.findMany({
+        where: { assessmentId: assessment.id },
+        orderBy: { priority: "asc" },
+        take: 40,
+      }),
+      db.domainScore.findMany({ where: { assessmentId: assessment.id } }),
+      db.assumption.findMany({
+        where: { assessmentId: assessment.id },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+      db.roleProposal.findMany({ where: { assessmentId: assessment.id } }),
+      db.estimate.findFirst({
+        where: { assessmentId: assessment.id },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+
+  // Per-section RAG retrieval — same shape as the full-run section pass.
+  const chunks = await retrieve(db, {
+    assessmentId: assessment.id,
+    query: spec.purpose || spec.title,
+    topK: 8,
+  });
+  const sectionEvidence =
+    chunks.length === 0
+      ? undefined
+      : chunks
+          .slice(0, 8)
+          .map((c, idx) => `[${idx + 1}] ${truncate(c.content, 240)}`)
+          .join("\n");
+
+  const diagramReferences =
+    deliverable.diagrams.length === 0
+      ? "(no diagrams generated this run)"
+      : deliverable.diagrams
+          .map((d) => `- ${d.title} (${d.diagramType ?? "OTHER"})`)
+          .join("\n");
+
+  // Reviewer feedback is folded into the purpose so the prompt picks it
+  // up without changing the prompt builder's contract.
+  const purposeWithFeedback = feedback?.trim()
+    ? `${spec.purpose}\n\nReviewer feedback — incorporate this when rewriting the section:\n${feedback.trim()}`
+    : spec.purpose;
+
+  const ai = await callClaude({
+    system: DELIVERABLE_SINGLE_SECTION_SYSTEM_PROMPT,
+    userContent: buildDeliverableSingleSectionPrompt({
+      assessmentMode: assessment.mode,
+      activeDomains: assessment.activeDomains,
+      projectContext: buildProjectBlurb(assessment.projectContext),
+      findings: buildFindingsBlurb(findings),
+      risks: buildRisksBlurb(risks),
+      recommendations: buildRecsBlurb(recommendations),
+      domainScores: buildScoresBlurb(domainScores),
+      assumptions: buildAssumptionsBlurb(assumptions),
+      teamProposal: buildTeamBlurb(teamProposals),
+      estimate: buildEstimateBlurb(latestEstimate),
+      diagrams: diagramReferences,
+      section: {
+        key: spec.key,
+        title: spec.title,
+        purpose: purposeWithFeedback,
+        audience: spec.audience ?? "stakeholders",
+        targetLength: spec.targetLength,
+        includesDiagrams: (spec.includesDiagrams?.length ?? 0) > 0,
+      },
+      sectionEvidence,
+    }),
+    parseResult: (raw) => parseJsonResponse<{ content?: string }>(raw),
+    maxTokens: 3_500,
+    audit: {
+      callType: "deliverable",
+      entityId: assessment.id,
+      entityType: "Assessment",
+    },
+  });
+
+  const newContent =
+    typeof ai.result.content === "string" ? ai.result.content.trim() : null;
+  if (!newContent) {
+    throw new Error("AI returned no content for the section");
+  }
+
+  await db.deliverableSection.update({
+    where: { id: sectionId },
+    data: {
+      contentDraft: newContent,
+      // Replace-the-source semantics: clear the published copy + reset
+      // review state so the regenerated draft is what the UI shows and
+      // a fresh review is required.
+      contentFinal: null,
+      reviewStatus: "DRAFT",
+      reviewedById: null,
+      reviewedAt: null,
+    },
+  });
+
+  return { sectionId, contentDraft: newContent };
+}

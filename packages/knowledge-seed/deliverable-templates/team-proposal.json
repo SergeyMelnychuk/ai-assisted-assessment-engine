@@ -1,0 +1,17 @@
+{
+  "key": "team_proposal",
+  "name": "Team Proposal",
+  "description": "Word doc proposing the team shape + estimate for an engagement. Engine fills cover, totals, and the per-role table; AI writes one engagement-context narrative explaining why this team shape was chosen given the findings + risks.",
+  "deliverableType": "TEAM_PROPOSAL",
+  "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "AUDIT", "PRE_IMPLEMENTATION", "GREENFIELD"],
+  "sections": [
+    {
+      "key": "team_proposal_overview",
+      "title": "Engagement context narrative",
+      "purpose": "3–4 sentences explaining the proposed team rationale for THIS engagement. Reference the dominant findings/risks/recommendations that drove the role mix and seniority shape (e.g. 'an emphasis on identity work pushed two senior security architects' or 'the lack of platform engineering capability requires a hands-on tech lead'). Avoid listing per-role specifics — the table below does that. Prose only.",
+      "targetLength": "short",
+      "audience": "Sponsor + engagement lead"
+    }
+  ],
+  "diagrams": []
+}

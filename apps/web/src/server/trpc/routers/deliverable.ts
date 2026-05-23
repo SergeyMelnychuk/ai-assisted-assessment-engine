@@ -6,7 +6,10 @@ import {
   engagementAccessFilter,
 } from "@/server/authz";
 import { enqueueGenerateDeliverable } from "@/server/queue/queue";
-import { regenerateDiagram } from "@/server/services/deliverable-generator";
+import {
+  regenerateDiagram,
+  regenerateSection,
+} from "@/server/services/deliverable-generator";
 
 const DELIVERABLE_TYPES = [
   "EXECUTIVE_SUMMARY",
@@ -323,6 +326,39 @@ export const deliverableRouter = createRouter({
         });
       }
       return regenerateDiagram(ctx.db, diagram.id, input.feedback);
+    }),
+
+  /**
+   * Regenerate a single deliverable section, optionally with reviewer
+   * feedback. Mirrors `regenerateDiagram` — one AI call, replaces the
+   * draft in place, other sections untouched. If the section was
+   * previously published the regen resets review state so the new draft
+   * surfaces and a fresh approval is required.
+   */
+  regenerateSection: protectedProcedure
+    .input(
+      z.object({
+        sectionId: z.string().cuid(),
+        feedback: z.string().max(2_000).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const section = await ctx.db.deliverableSection.findFirst({
+        where: {
+          id: input.sectionId,
+          deliverable: {
+            assessment: { engagement: engagementAccessFilter(ctx.session) },
+          },
+        },
+        select: { id: true },
+      });
+      if (!section) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Section not found",
+        });
+      }
+      return regenerateSection(ctx.db, section.id, input.feedback);
     }),
 
   /**

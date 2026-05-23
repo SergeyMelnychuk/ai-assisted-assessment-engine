@@ -86,6 +86,26 @@ export const ENGINE_OUTPUT_FIELDS = [
   // Generated date — convenience for cover blocks.
   "generated.date",
   "generated.timestamp",
+  // AI-written deliverable section bodies — looked up by `sectionKey`
+  // via the `section.<key>` field path. The exact keys live in each
+  // template's deliverable-template JSON spec (e.g.
+  // `packages/knowledge-seed/deliverable-templates/roadmap.json`); the
+  // entries below are illustrative placeholders so the binding
+  // proposer knows the field family exists. The resolver accepts any
+  // `section.<key>` path regardless of whether it's listed here.
+  "section.executive_summary",
+  "section.engagement_context",
+  "section.current_state",
+  "section.target_state",
+  "section.key_findings",
+  "section.recommendations",
+  "section.team_and_estimate",
+  "section.assumptions_and_gaps",
+  "section.phase_1_scope",
+  "section.phase_2_scope",
+  "section.phase_3_scope",
+  "section.milestones_owners",
+  "section.phasing_rationale",
 ] as const;
 
 export type EngineOutputField = (typeof ENGINE_OUTPUT_FIELDS)[number];

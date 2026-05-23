@@ -135,6 +135,12 @@
       "groupKey": "roles",
       "format": "currency",
       "note": "Roles table > Cost (high) column."
+    },
+    {
+      "field": "section.estimate_overview",
+      "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "A22" },
+      "format": "auto",
+      "note": "Cover > Estimate overview — AI-written narrative explaining the totals + drivers + confidence."
     }
   ]
 }

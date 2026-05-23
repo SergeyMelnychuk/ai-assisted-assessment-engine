@@ -64,10 +64,28 @@
       "note": "Section 4 > Gaps in evidence > Recommendations drafted."
     },
     {
-      "field": "recommendations.bulletList",
-      "target": { "kind": "docx.placeholder", "token": "{{recommendations_bullets}}" },
+      "field": "section.open_questions",
+      "target": { "kind": "docx.placeholder", "token": "{{section_open_questions}}" },
       "format": "auto",
-      "note": "Section 5 > Recommended next discovery activities — engine's recommendations bullet list."
+      "note": "Section 2 > AI-written open-question bullets. Replaces a static framing paragraph."
+    },
+    {
+      "field": "section.dependencies",
+      "target": { "kind": "docx.placeholder", "token": "{{section_dependencies}}" },
+      "format": "auto",
+      "note": "Section 3 > AI-written dependency bullets."
+    },
+    {
+      "field": "section.evidence_gaps",
+      "target": { "kind": "docx.placeholder", "token": "{{section_evidence_gaps}}" },
+      "format": "auto",
+      "note": "Section 4 > AI-written evidence-gap narrative."
+    },
+    {
+      "field": "section.next_discovery_activities",
+      "target": { "kind": "docx.placeholder", "token": "{{section_next_discovery_activities}}" },
+      "format": "auto",
+      "note": "Section 5 > AI-written discovery activities. Replaces the previous recommendations.bulletList raw dump."
     },
     {
       "field": "generated.date",

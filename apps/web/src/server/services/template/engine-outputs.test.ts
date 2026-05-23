@@ -64,6 +64,7 @@ function fixture(overrides: Partial<EngineOutputs> = {}): EngineOutputs {
     findings: { bulletList: "- [HIGH/security] X" },
     risks: { bulletList: "- [HIGH/tech] Y" },
     recommendations: { bulletList: "- [P1/security] Z" },
+    section: {},
     generated: { date: "2026-05-07", timestamp: "2026-05-07T00:00:00Z" },
     ...overrides,
   };

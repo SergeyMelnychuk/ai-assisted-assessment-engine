@@ -7,7 +7,10 @@
   [ADR-0011](./0011-evidence-traceability-first-class.md) — fills emit
   Document rows that flow into the same evidence stream;
   [ADR-0015](./0015-multi-provider-llm-routing.md) — the AI binding
-  proposer is just another routed task.
+  proposer is just another routed task;
+  [ADR-0029](./0029-deliverable-section-field-family.md) — extends the
+  binding `field` vocabulary with the `section.<key>` family so AI-
+  written prose lands in the output file alongside engine data.
 
 ## Context
 

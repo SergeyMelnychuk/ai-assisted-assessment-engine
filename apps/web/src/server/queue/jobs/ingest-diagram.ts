@@ -137,6 +137,17 @@ export async function ingestDiagramJob(documentId: string): Promise<void> {
         : [];
 
     await db.$transaction(async (tx) => {
+      // Defensive cleanup: on Retry, drop any Evidence rows + diagram-
+      // sourced rows this document produced last time. `createMany`
+      // below would otherwise append duplicates, and downstream retrieval
+      // already de-dupes poorly. Mirrors the deliverable-generator
+      // pattern that deletes prior DRAFT deliverables before recreating
+      // them. The Diagram itself is `upsert`ed by deterministic id
+      // (`diagram-<documentId>`) so the row identity stays stable across
+      // retries.
+      await tx.evidence.deleteMany({
+        where: { documentId: doc.id },
+      });
       await tx.diagram.upsert({
         where: { id: `diagram-${doc.id}` },
         create: {

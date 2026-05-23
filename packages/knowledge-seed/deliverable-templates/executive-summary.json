@@ -1,0 +1,31 @@
+{
+  "key": "executive_summary",
+  "name": "Executive Summary",
+  "description": "Sponsor-facing 7-slide deck. Engine fills cover + numeric stats; AI writes the three narrative panels (headline findings, top risks, executive recommendations) so the sponsor reads curated prose, not raw bullet dumps.",
+  "deliverableType": "EXECUTIVE_SUMMARY",
+  "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "AUDIT", "PRE_IMPLEMENTATION", "GREENFIELD"],
+  "sections": [
+    {
+      "key": "headline_findings",
+      "title": "Headline findings",
+      "purpose": "5–7 highest-severity findings written for an executive sponsor — not the engineering team. Each as a short markdown bullet: a strong opening clause (the issue), one or two sentences of business consequence, no domain code prefixes ([CRITICAL/security_iam] etc.) Cut the long tail; the engineering audience sees the full list elsewhere. Order by severity desc, then by likely business impact.",
+      "targetLength": "short",
+      "audience": "C-level sponsor"
+    },
+    {
+      "key": "top_risks",
+      "title": "Top risks",
+      "purpose": "5–7 most material risks. Same audience and prose rules as headline_findings. Each bullet: title in bold-ish opening clause, one sentence on impact, one sentence on a credible mitigation. Skip risks rated LOW. No category-code prefixes.",
+      "targetLength": "short",
+      "audience": "C-level sponsor"
+    },
+    {
+      "key": "executive_recommendations",
+      "title": "Priority recommendations",
+      "purpose": "5–8 priority recommendations curated for the sponsor. Cluster by theme if helpful. Each bullet: action verb opener, the outcome it unlocks, and (where defensible) one phrase on effort relative to value. Do NOT paste the raw recommendations list — synthesise. No priority/domain prefixes.",
+      "targetLength": "medium",
+      "audience": "C-level sponsor"
+    }
+  ],
+  "diagrams": []
+}

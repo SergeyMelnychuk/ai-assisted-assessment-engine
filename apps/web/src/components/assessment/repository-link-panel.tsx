@@ -100,6 +100,10 @@ export function RepositoryLinkPanel({
   const documentsQuery = trpc.document.listByAssessment.useQuery(
     { assessmentId },
     {
+      // See note in `document-list.tsx`: gate against undefined
+      // `assessmentId` so dev-time route transitions don't fire the query
+      // with `{}` and trip the server-side Zod validator.
+      enabled: !!assessmentId,
       refetchInterval: (query) => {
         const docs = query.state.data;
         if (!docs) return 4_000;
