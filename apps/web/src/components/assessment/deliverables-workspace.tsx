@@ -243,10 +243,18 @@ export function DeliverablesWorkspace({
             {generateMutation.error.message}
           </p>
         ) : null}
-        <TemplateFillDownload
-          assessmentId={assessmentId}
-          kind={pickerKind}
-        />
+        {/* Picker-scoped download — shows the populated file matching
+            the dropdown's kind. Hidden when the picker matches the
+            currently-previewed deliverable, since `DeliverablePreview`
+            now renders its own per-deliverable download right under
+            the summary card and showing both would mean two identical
+            cards on screen for the same file. */}
+        {selectedFillKind !== pickerKind ? (
+          <TemplateFillDownload
+            assessmentId={assessmentId}
+            kind={pickerKind}
+          />
+        ) : null}
       </div>
 
       <div className="grid gap-6 md:grid-cols-[260px_1fr]">
@@ -301,20 +309,12 @@ export function DeliverablesWorkspace({
 
       <section className="space-y-3">
         {selectedId ? (
-          <>
-            <DeliverablePreview deliverableId={selectedId} />
-            {/* When the user is browsing a past deliverable whose
-                template kind differs from the type currently chosen
-                in the top picker, surface the past one's filled
-                output here too so the download stays one click
-                away. Hides itself when no fill exists. */}
-            {selectedFillKind && selectedFillKind !== pickerKind ? (
-              <TemplateFillDownload
-                assessmentId={assessmentId}
-                kind={selectedFillKind}
-              />
-            ) : null}
-          </>
+          // Per-deliverable download moved INTO `DeliverablePreview`
+          // (right under the deliverable summary card) so it sits with
+          // the artefact it belongs to instead of dangling at the
+          // bottom of the page. The previous bottom-of-page card,
+          // gated by `selectedFillKind !== pickerKind`, lived here.
+          <DeliverablePreview deliverableId={selectedId} />
         ) : (
           <div className="rounded-md border bg-muted/20 px-4 py-12 text-center text-sm text-muted-foreground">
             Generate a deliverable to see the preview here.

@@ -28,6 +28,8 @@ import { SectionReview } from "@/components/review/section-review";
 import { ReviewDashboard } from "@/components/review/review-dashboard";
 import { GuideMarkdown } from "@/components/admin/guide/guide-markdown";
 import { MarkdownEditor } from "@/components/common/markdown-editor";
+import { TemplateFillDownload } from "@/components/templates/template-fill-download";
+import type { TemplateKind } from "@prisma/client";
 
 interface SectionRow {
   id: string;
@@ -63,7 +65,45 @@ interface DiagramRow {
  * snapshot. Approve / reject / request-revision actions go through the
  * same router.
  */
-export function DeliverablePreview({ deliverableId }: { deliverableId: string }) {
+/**
+ * Thin wrapper that gatekeeps on `deliverableId`. The hook-bearing
+ * implementation lives in `DeliverablePreviewInner`; this wrapper
+ * exists so the inner component (and ALL the tRPC `useQuery` calls it
+ * registers) doesn't mount until we have a real string id.
+ *
+ * Why a wrapper vs. an `enabled: !!deliverableId` on the hooks alone:
+ * during regeneration React's batched state updates can leave the
+ * parent's `selectedId` momentarily undefined, and we kept seeing the
+ * underlying tRPC request fire with `{}` despite the `enabled` flag.
+ * Splitting at the component boundary stops the hooks from registering
+ * at all on those transient renders — guaranteed, no closure / re-
+ * render edge cases — and so the loggerLink has nothing to log.
+ *
+ * `key={deliverableId}` on the inner component also resets all internal
+ * state (the edit dialog, regen feedback buffer, etc.) cleanly when the
+ * user switches between deliverables.
+ */
+export function DeliverablePreview({
+  deliverableId,
+}: {
+  deliverableId: string;
+}) {
+  if (typeof deliverableId !== "string" || deliverableId.length === 0) {
+    return null;
+  }
+  return (
+    <DeliverablePreviewInner
+      key={deliverableId}
+      deliverableId={deliverableId}
+    />
+  );
+}
+
+function DeliverablePreviewInner({
+  deliverableId,
+}: {
+  deliverableId: string;
+}) {
   const utils = trpc.useUtils();
   const { data: sessionData } = useSession();
   const userRole = (sessionData?.user as { role?: string } | undefined)?.role;
@@ -71,7 +111,14 @@ export function DeliverablePreview({ deliverableId }: { deliverableId: string })
 
   const query = trpc.deliverable.getById.useQuery(
     { id: deliverableId },
-    { refetchInterval: 5_000 },
+    {
+      // Belt-and-suspenders against the same scenario the wrapper
+      // catches — the wrapper guarantees we won't be called with an
+      // empty id, but if a future refactor forgets the wrapper this
+      // keeps the bug from regressing.
+      enabled: deliverableId.length > 0,
+      refetchInterval: 5_000,
+    },
   );
 
   // Edits route through the review router — keeps the audit trail
@@ -159,6 +206,18 @@ export function DeliverablePreview({ deliverableId }: { deliverableId: string })
           </div>
         </CardHeader>
       </Card>
+
+      {/* Populated-file download for THIS deliverable, sitting right
+          under the summary card so the user doesn't have to scroll to
+          find it. The component hides itself when no fill exists yet
+          (e.g. the deliverable was generated but the post-fill step
+          had no APPROVED template to use). Per ADR-0018 the per-
+          deliverable TemplateKind enum is a 1:1 mirror of
+          DeliverableType, so this cast is safe. */}
+      <TemplateFillDownload
+        assessmentId={deliverable.assessmentId}
+        kind={deliverable.deliverableType as TemplateKind}
+      />
 
       <ReviewDashboard deliverableId={deliverableId} />
 

@@ -83,6 +83,33 @@ export const ENGINE_OUTPUT_FIELDS = [
   "findings.bulletList",
   "risks.bulletList",
   "recommendations.bulletList",
+  // Per-row arrays — `X[*].field` iterates one row per item, matching
+  // the existing `roles[*].field` pattern. The proposer should pick
+  // these whenever the template has a per-item table (e.g. the Risks
+  // sheet on a Risk Register, a Findings register, a Recommendations
+  // matrix). Field names mirror the conventional spreadsheet column
+  // headers reviewers actually type.
+  "findings[*].title",
+  "findings[*].domain",
+  "findings[*].type",
+  "findings[*].severity",
+  "findings[*].description",
+  "findings[*].confidence",
+  "risks[*].title",
+  "risks[*].category",
+  "risks[*].severity",
+  "risks[*].likelihood",
+  "risks[*].impact",
+  "risks[*].description",
+  "risks[*].mitigation",
+  "risks[*].owner",
+  "risks[*].confidence",
+  "recommendations[*].title",
+  "recommendations[*].domain",
+  "recommendations[*].priority",
+  "recommendations[*].effort",
+  "recommendations[*].description",
+  "recommendations[*].confidence",
   // Generated date — convenience for cover blocks.
   "generated.date",
   "generated.timestamp",

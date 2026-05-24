@@ -52,14 +52,54 @@ export interface EngineOutputs {
     recommendationsCount: number;
     activeDomains: string[];
   };
+  // Each of `findings` / `risks` / `recommendations` is a "compound"
+  // shape: the legacy `bulletList` string (one-line-per-row, used by
+  // narrative slots like an Assessment Report Findings section) PLUS
+  // a `rows` array of structured per-item objects (used by
+  // spreadsheet-style outputs like the Risk Register's Risks sheet
+  // and any customer-uploaded `.xlsx` with a per-item table).
+  //
+  // Field names on the rows are intentionally short for binding
+  // ergonomics — they match the column header conventions reviewers
+  // actually type in workbooks (e.g. "Mitigation" not
+  // "Mitigation proposal"). The resolver knows how to dispatch
+  // `risks[*].title` to `outputs.risks.rows[*].title` via a compound-
+  // shape branch (see `resolveEngineField`).
   findings: {
     bulletList: string;
+    rows: ReadonlyArray<{
+      title: string;
+      domain: string;
+      type: string;
+      severity: string;
+      description: string;
+      confidence: number;
+    }>;
   };
   risks: {
     bulletList: string;
+    rows: ReadonlyArray<{
+      title: string;
+      category: string;
+      severity: string;
+      likelihood: string;
+      impact: string;
+      description: string;
+      mitigation: string;
+      owner: string;
+      confidence: number;
+    }>;
   };
   recommendations: {
     bulletList: string;
+    rows: ReadonlyArray<{
+      title: string;
+      domain: string;
+      priority: string;
+      effort: string;
+      description: string;
+      confidence: number;
+    }>;
   };
   /**
    * AI-written deliverable section bodies, keyed by `sectionKey`. Populated
@@ -127,6 +167,11 @@ export async function loadEngineOutputs(
         rateCard: { select: { currency: true } },
       },
     }),
+    // Pull every column the per-item row needs. `select` is explicit
+    // (rather than letting Prisma return everything) so the snapshot
+    // we write to `TemplateFill.inputsSnapshot` stays bounded and
+    // doesn't accidentally include heavy / sensitive columns like
+    // `retrievedEvidenceIds` or audit timestamps.
     db.finding.findMany({
       where: { assessmentId },
       select: {
@@ -134,6 +179,8 @@ export async function loadEngineOutputs(
         description: true,
         severity: true,
         domain: true,
+        findingType: true,
+        confidence: true,
       },
       orderBy: [{ severity: "asc" }, { domain: "asc" }],
     }),
@@ -144,6 +191,11 @@ export async function loadEngineOutputs(
         description: true,
         severity: true,
         category: true,
+        likelihood: true,
+        impact: true,
+        mitigationProposal: true,
+        ownerSuggestion: true,
+        confidence: true,
       },
       orderBy: [{ severity: "asc" }, { category: "asc" }],
     }),
@@ -154,6 +206,8 @@ export async function loadEngineOutputs(
         description: true,
         priority: true,
         domain: true,
+        effortIndication: true,
+        confidence: true,
       },
       orderBy: [{ priority: "asc" }, { domain: "asc" }],
     }),
@@ -274,16 +328,45 @@ export async function loadEngineOutputs(
       bulletList: findings
         .map((f) => `- [${f.severity}/${f.domain}] ${f.title}`)
         .join("\n"),
+      rows: findings.map((f) => ({
+        title: f.title,
+        domain: f.domain,
+        type: f.findingType,
+        severity: f.severity,
+        description: f.description,
+        confidence: f.confidence,
+      })),
     },
     risks: {
       bulletList: risks
         .map((r) => `- [${r.severity}/${r.category}] ${r.title}`)
         .join("\n"),
+      rows: risks.map((r) => ({
+        title: r.title,
+        category: r.category,
+        severity: r.severity,
+        likelihood: r.likelihood,
+        impact: r.impact,
+        description: r.description,
+        // Free-text columns can be null in the DB — flatten to "" so the
+        // filler writes an empty cell instead of the literal "null".
+        mitigation: r.mitigationProposal ?? "",
+        owner: r.ownerSuggestion ?? "",
+        confidence: r.confidence,
+      })),
     },
     recommendations: {
       bulletList: recommendations
         .map((r) => `- [${r.priority}/${r.domain}] ${r.title}`)
         .join("\n"),
+      rows: recommendations.map((r) => ({
+        title: r.title,
+        domain: r.domain,
+        priority: r.priority,
+        effort: r.effortIndication ?? "",
+        description: r.description,
+        confidence: r.confidence,
+      })),
     },
     section: sectionMap,
     generated: {
@@ -305,14 +388,38 @@ export function resolveEngineField(
   outputs: EngineOutputs,
   field: string,
 ): string | number | string[] | number[] | undefined {
-  // Array iterator path — only one level for v1 (roles[*].x).
+  // Array iterator path — covers two compound shapes for v1:
+  //
+  // (a) `roles[*].x` — `outputs.roles` is itself an array of objects.
+  //     Legacy shape; the per-role table was the original use-case.
+  // (b) `risks[*].x` / `findings[*].x` / `recommendations[*].x` —
+  //     `outputs.X` is an object `{ bulletList, rows: [...] }`. The
+  //     bullet list is preserved for narrative slots (Word, slide
+  //     bodies), and the `rows` array carries the same data flattened
+  //     for spreadsheet-style per-row fills.
+  //
+  // Tying both shapes to the same `X[*].field` syntax keeps the
+  // binding language symmetric: a customer-uploaded `.xlsx` with a
+  // Risks tab binds the same way an uploaded WBS workbook binds its
+  // Roles table.
   const arrayMatch = field.match(/^([\w]+)\[\*\]\.(.+)$/);
   if (arrayMatch) {
     const [, arrName, rest] = arrayMatch;
-    const arr = (outputs as unknown as Record<string, unknown>)[arrName];
-    if (!Array.isArray(arr)) return undefined;
-    return arr.map((row) => {
-      const v = (row as Record<string, unknown>)[rest];
+    const candidate = (outputs as unknown as Record<string, unknown>)[arrName];
+    let arr: unknown;
+    if (Array.isArray(candidate)) {
+      arr = candidate;
+    } else if (
+      candidate &&
+      typeof candidate === "object" &&
+      Array.isArray((candidate as Record<string, unknown>).rows)
+    ) {
+      arr = (candidate as Record<string, unknown>).rows;
+    } else {
+      return undefined;
+    }
+    return (arr as Array<Record<string, unknown>>).map((row) => {
+      const v = row[rest];
       return typeof v === "number" || typeof v === "string" ? v : "";
     }) as string[] | number[];
   }

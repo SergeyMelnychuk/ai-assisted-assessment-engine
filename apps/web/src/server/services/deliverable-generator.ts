@@ -420,11 +420,24 @@ export async function runDeliverableGeneration(
         status: { in: ["GENERATING", "DRAFT"] },
       },
     });
+    // Drop the previous GENERATED diagrams ONLY for the deliverable
+    // type we're about to recreate, and only when the owning
+    // deliverable was still in DRAFT/GENERATING (i.e. about to be
+    // replaced by the deleteMany above). The previous unconditional
+    // `assessmentId + direction=GENERATED` filter wiped diagrams across
+    // ALL deliverable types — generating a Roadmap (no diagrams in its
+    // spec) deleted the Assessment Report's diagrams as a side effect.
+    // Schema note: `Diagram.deliverable` has no `onDelete: Cascade`,
+    // so we delete here explicitly rather than relying on the parent
+    // delete to chain.
     await tx.diagram.deleteMany({
       where: {
         assessmentId,
         direction: "GENERATED",
-        // Drop previous GENERATED diagrams so we don't accumulate stale ones.
+        deliverable: {
+          deliverableType,
+          status: { in: ["GENERATING", "DRAFT"] },
+        },
       },
     });
 

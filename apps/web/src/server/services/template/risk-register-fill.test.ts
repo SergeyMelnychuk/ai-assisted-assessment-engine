@@ -66,14 +66,19 @@ function baseOutputs(overrides: Partial<EngineOutputs> = {}): EngineOutputs {
       recommendationsCount: 0,
       activeDomains: [],
     },
-    findings: { bulletList: "" },
+    findings: { bulletList: "" ,
+      rows: [],
+    },
     risks: {
       bulletList:
         "- [HIGH/SECURITY] Unpatched dependency drift\n" +
         "- [MEDIUM/OPERATIONS] No documented rollback plan\n" +
         "- [LOW/PROCESS] Manual release cadence",
+      rows: [],
     },
-    recommendations: { bulletList: "" },
+    recommendations: { bulletList: "" ,
+      rows: [],
+    },
     section: {
       risk_overview:
         "Five risks identified across the engagement. Two are HIGH severity; both centre on auth + rollback maturity.\n\n- Identity & access — three risks span MFA, SSO, secrets.\n- Operational readiness — rollback and observability gaps.",

@@ -8,6 +8,15 @@ import {
   resolveEngineField,
   type EngineOutputs,
 } from "./engine-outputs";
+import { escapeXml } from "./xml-escape";
+import {
+  containsMarkdownSyntax,
+  parseMarkdown,
+  renderBlocksToDocx,
+  renderBlocksToPptx,
+  renderBlocksToXlsx,
+  stripMarkdownSyntax,
+} from "./markdown-to-ooxml";
 
 /**
  * Template filler.
@@ -207,6 +216,17 @@ function writeXlsxTarget(
     }
     const cell = sheet.getCell(entry.target.cell);
     const v = Array.isArray(value) ? value.join(", ") : value;
+    // Markdown-aware: when the value is a string with bullet / bold
+    // syntax, write a RichText cell value so the reader sees
+    // formatted runs and bullet-prefixed lines instead of literal
+    // `**`, `-` characters. Plain values keep the simple
+    // `cell.value = formatValue(...)` path.
+    if (typeof v === "string" && containsMarkdownSyntax(v)) {
+      const blocks = parseMarkdown(v);
+      cell.value = renderBlocksToXlsx(blocks) as never;
+      cell.alignment = { ...(cell.alignment ?? {}), wrapText: true };
+      return true;
+    }
     cell.value = formatValue(v, entry.format);
     return true;
   }
@@ -237,6 +257,13 @@ function writeXlsxTarget(
     }
     const cell = sheet.getCell(addr.replace(/\$/g, ""));
     const v = Array.isArray(value) ? value.join(", ") : value;
+    // Same markdown branch as the `xlsx.cell` path above.
+    if (typeof v === "string" && containsMarkdownSyntax(v)) {
+      const blocks = parseMarkdown(v);
+      cell.value = renderBlocksToXlsx(blocks) as never;
+      cell.alignment = { ...(cell.alignment ?? {}), wrapText: true };
+      return true;
+    }
     cell.value = formatValue(v, entry.format);
     return true;
   }
@@ -338,9 +365,14 @@ async function fillDocxPlaceholders(
     if (entry.filename === "word/document.xml") {
       let text = content.toString("utf8");
       for (const { token, value } of subs) {
-        const before = text;
-        text = text.split(token).join(escapeXml(value));
-        if (text !== before) filled++;
+        const { xml, hit } = substituteWithMarkdown({
+          xml: text,
+          token,
+          value,
+          format: "docx",
+        });
+        text = xml;
+        if (hit) filled++;
       }
       content = Buffer.from(text, "utf8");
     }
@@ -355,13 +387,6 @@ async function fillDocxPlaceholders(
     outZip.outputStream.on("error", reject);
   });
   return { buffer: buf, warnings, filledEntryCount: filled };
-}
-
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }
 
 // ─── Pptx (placeholder substitution) ───────────────────────────────
@@ -435,9 +460,14 @@ async function fillPptxPlaceholders(
     if (isPptxTextEntry(entry.filename)) {
       let text = content.toString("utf8");
       for (const { token, value } of subs) {
-        const before = text;
-        text = text.split(token).join(escapeXml(value));
-        if (text !== before) hitTokens.add(token);
+        const { xml, hit } = substituteWithMarkdown({
+          xml: text,
+          token,
+          value,
+          format: "pptx",
+        });
+        text = xml;
+        if (hit) hitTokens.add(token);
       }
       content = Buffer.from(text, "utf8");
     }
@@ -461,5 +491,111 @@ function isPptxTextEntry(filename: string): boolean {
     /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(filename) ||
     /^ppt\/notesSlides\/notesSlide\d+\.xml$/.test(filename)
   );
+}
+
+// ─── Markdown-aware substitution ──────────────────────────────────
+
+/**
+ * Substitute a placeholder token into OOXML, rendering native
+ * paragraph/run structures when the value contains markdown.
+ *
+ * Strategy:
+ *   - No markdown syntax in the value → plain string replace,
+ *     XML-escaped (preserves the existing v1 behaviour). Cheap.
+ *   - Markdown syntax present, and the token sits alone inside its
+ *     containing paragraph (`<w:p>` for docx, `<a:p>` for pptx) →
+ *     splice in rendered paragraph(s) and preserve the parent's
+ *     `<w:pPr>` / `<a:pPr>` so font/alignment carry over.
+ *   - Markdown syntax present but the token is mid-sentence → fall
+ *     back to plain string replace with markdown syntax stripped, so
+ *     we don't leak orphan `**` characters into the output.
+ *
+ * The paragraph match uses non-greedy `[\s\S]*?` because OOXML
+ * paragraphs don't nest. PowerPoint's "split run" edge case
+ * (`{{` and `token}}` ending up in separate `<a:t>` elements after
+ * a manual edit) still falls back to the inline path — same as the
+ * pre-markdown filler. Authors should keep tokens in a single run.
+ */
+function substituteWithMarkdown(args: {
+  xml: string;
+  token: string;
+  value: string;
+  format: "docx" | "pptx";
+}): { xml: string; hit: boolean } {
+  const { token, value, format } = args;
+  let { xml } = args;
+
+  // Fast path — no markdown means no XML restructuring.
+  if (!containsMarkdownSyntax(value)) {
+    const before = xml;
+    xml = xml.split(token).join(escapeXml(value));
+    return { xml, hit: xml !== before };
+  }
+
+  const blocks = parseMarkdown(value);
+  const pTag = format === "docx" ? "w:p" : "a:p";
+  const pPrTag = format === "docx" ? "w:pPr" : "a:pPr";
+  // Non-greedy paragraph match. `\b` after the opening tag stops
+  // mistaken matches against `<w:pPr>` etc.
+  const paraRe = new RegExp(
+    `<${pTag}\\b[^>]*>([\\s\\S]*?)</${pTag}>`,
+    "g",
+  );
+
+  let hit = false;
+  let result = "";
+  let lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = paraRe.exec(xml)) !== null) {
+    const para = m[0];
+    const inner = m[1];
+    result += xml.slice(lastIndex, m.index);
+    lastIndex = m.index + para.length;
+
+    if (!inner.includes(token)) {
+      // No token in this paragraph — pass through untouched.
+      result += para;
+      continue;
+    }
+    hit = true;
+
+    // Does the token stand alone inside this paragraph? Strip all
+    // tags and compare against the token. Tolerates surrounding
+    // whitespace, which OOXML paragraphs commonly carry inside
+    // text-preserving runs.
+    const textOnly = inner.replace(/<[^>]+>/g, "").trim();
+    if (textOnly === token) {
+      // Preserve the original `<w:pPr>` / `<a:pPr>` contents so the
+      // generated paragraphs inherit the author's font / alignment.
+      const pPrMatch = inner.match(
+        new RegExp(`<${pPrTag}\\b[^>]*>([\\s\\S]*?)</${pPrTag}>`),
+      );
+      const pPrInner = pPrMatch ? pPrMatch[1] : "";
+      const rendered =
+        format === "docx"
+          ? renderBlocksToDocx(blocks, pPrInner)
+          : renderBlocksToPptx(blocks, pPrInner);
+      result += rendered;
+    } else {
+      // Mid-sentence — keep the existing inline string replacement
+      // but strip the markdown syntax characters so the output reads
+      // cleanly (no orphan `**` chars).
+      const stripped = stripMarkdownSyntax(value);
+      result += para.split(token).join(escapeXml(stripped));
+    }
+  }
+  result += xml.slice(lastIndex);
+
+  // Edge case — token appears in the XML but outside any paragraph
+  // (unusual, but e.g. in `<w:sectPr>`). Fall back to whole-string
+  // replace with stripped markdown so we still hit it.
+  if (!hit && xml.includes(token)) {
+    const stripped = stripMarkdownSyntax(value);
+    const before = result;
+    result = result.split(token).join(escapeXml(stripped));
+    hit = result !== before;
+  }
+
+  return { xml: result, hit };
 }
 

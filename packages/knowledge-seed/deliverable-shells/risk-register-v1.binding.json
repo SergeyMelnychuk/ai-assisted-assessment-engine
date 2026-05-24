@@ -1,7 +1,7 @@
 {
   "version": 1,
   "templateKind": "RISK_REGISTER",
-  "notes": "Hand-authored workspace-default binding for the Risk Register v1 workbook. seed: {\"name\":\"Risk Register\",\"version\":\"v1\",\"kind\":\"RISK_REGISTER\"}. Cover-sheet cells carrying the literal «bind» token and the yellow fill are filled by the engine; everything else is left blank for human authorship. Per-row Risk fields on the 'Risks' sheet (Title, Category, Severity, Likelihood, Description, Mitigation, Owner, Status) are intentionally NOT bound — the engine has no per-risk structured fields. The Cover 'risk overview' cell is filled with AI-written prose via `section.risk_overview` (declared in `deliverable-templates/risk-register.json`); previous binding dumped the raw `risks.bulletList` engine output which produced unreadable `[severity/category]`-prefixed lines.",
+  "notes": "Hand-authored workspace-default binding for the Risk Register v1 workbook. seed: {\"name\":\"Risk Register\",\"version\":\"v1\",\"kind\":\"RISK_REGISTER\"}. Cover-sheet cells carrying the literal «bind» token and the yellow fill are filled by the engine. The 'Risks' sheet's per-row table is fed by `risks[*].field` iterators (grouped under `groupKey: 'risks'`, starting at A2 — header is row 1). The ID and Status columns stay unbound (no canonical id, no canonical status — reviewer assigns). The Cover 'risk overview' cell is filled with AI-written prose via `section.risk_overview` (declared in `deliverable-templates/risk-register.json`); previous binding dumped the raw `risks.bulletList` engine output which produced unreadable `[severity/category]`-prefixed lines.",
   "entries": [
     {
       "field": "project.name",
@@ -49,7 +49,56 @@
       "field": "section.risk_overview",
       "target": { "kind": "xlsx.cell", "sheet": "Cover", "cell": "A15" },
       "format": "auto",
-      "note": "Cover > Risk overview — AI-written narrative summary + cross-cutting themes. Replaces the previous risks.bulletList raw dump. Per-row Risk fields on the Risks sheet are deliberately unbound (see top-level notes)."
+      "note": "Cover > Risk overview — AI-written narrative summary + cross-cutting themes. Replaces the previous risks.bulletList raw dump."
+    },
+    {
+      "field": "risks[*].title",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Risks", "startCell": "A2", "column": "B" },
+      "groupKey": "risks",
+      "format": "auto",
+      "note": "Risks sheet > Title column (B)."
+    },
+    {
+      "field": "risks[*].category",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Risks", "startCell": "A2", "column": "C" },
+      "groupKey": "risks",
+      "format": "auto",
+      "note": "Risks sheet > Category column (C)."
+    },
+    {
+      "field": "risks[*].severity",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Risks", "startCell": "A2", "column": "D" },
+      "groupKey": "risks",
+      "format": "auto",
+      "note": "Risks sheet > Severity column (D) — CRITICAL/HIGH/MEDIUM/LOW."
+    },
+    {
+      "field": "risks[*].likelihood",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Risks", "startCell": "A2", "column": "E" },
+      "groupKey": "risks",
+      "format": "auto",
+      "note": "Risks sheet > Likelihood column (E) — VERY_LIKELY/LIKELY/POSSIBLE/UNLIKELY."
+    },
+    {
+      "field": "risks[*].description",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Risks", "startCell": "A2", "column": "F" },
+      "groupKey": "risks",
+      "format": "auto",
+      "note": "Risks sheet > Description column (F)."
+    },
+    {
+      "field": "risks[*].mitigation",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Risks", "startCell": "A2", "column": "G" },
+      "groupKey": "risks",
+      "format": "auto",
+      "note": "Risks sheet > Mitigation column (G) — may be blank when the engine had no proposal."
+    },
+    {
+      "field": "risks[*].owner",
+      "target": { "kind": "xlsx.tableRow", "sheet": "Risks", "startCell": "A2", "column": "H" },
+      "groupKey": "risks",
+      "format": "auto",
+      "note": "Risks sheet > Owner column (H) — engine's suggestion (may be blank). Reviewer typically overrides."
     }
   ]
 }

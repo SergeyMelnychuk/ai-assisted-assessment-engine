@@ -132,6 +132,32 @@ const ENGINE_FIELD_DESCRIPTIONS: Record<string, string> = {
   "findings.bulletList": "joined bullet list of all findings",
   "risks.bulletList": "joined bullet list of all risks",
   "recommendations.bulletList": "joined bullet list of all recs",
+  // Per-row arrays — pick these for spreadsheets with per-item tables
+  // (Risks sheet on a Risk Register, Findings register, Recommendations
+  // matrix). Iterate with `xlsx.tableRow` + a shared `groupKey`. The
+  // bullet-list form above is for narrative slots (Word / slide
+  // bodies) where one cell holds the whole formatted list.
+  "findings[*].title": "finding title (one per row, iterate via xlsx.tableRow)",
+  "findings[*].domain": "finding domain",
+  "findings[*].type": "FindingType (STRENGTH/WEAKNESS/GAP/OBSERVATION/OPPORTUNITY)",
+  "findings[*].severity": "CRITICAL/HIGH/MEDIUM/LOW",
+  "findings[*].description": "finding description (long)",
+  "findings[*].confidence": "0–1 confidence score",
+  "risks[*].title": "risk title (one per row, iterate via xlsx.tableRow)",
+  "risks[*].category": "risk category",
+  "risks[*].severity": "CRITICAL/HIGH/MEDIUM/LOW",
+  "risks[*].likelihood": "VERY_LIKELY/LIKELY/POSSIBLE/UNLIKELY",
+  "risks[*].impact": "CRITICAL/HIGH/MEDIUM/LOW",
+  "risks[*].description": "risk description (long)",
+  "risks[*].mitigation": "suggested mitigation (may be empty)",
+  "risks[*].owner": "suggested owner (may be empty)",
+  "risks[*].confidence": "0–1 confidence score",
+  "recommendations[*].title": "recommendation title (one per row, iterate via xlsx.tableRow)",
+  "recommendations[*].domain": "recommendation domain",
+  "recommendations[*].priority": "Priority enum (CRITICAL/HIGH/MEDIUM/LOW)",
+  "recommendations[*].effort": "effort indication (free text, may be empty)",
+  "recommendations[*].description": "recommendation description (long)",
+  "recommendations[*].confidence": "0–1 confidence score",
   "generated.date": "ISO date the fill ran",
   "generated.timestamp": "ISO timestamp the fill ran",
   "section.<key>":

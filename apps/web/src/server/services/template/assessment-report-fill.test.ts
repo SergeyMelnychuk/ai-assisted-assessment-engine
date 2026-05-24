@@ -56,10 +56,15 @@ function baseOutputs(overrides: Partial<EngineOutputs> = {}): EngineOutputs {
       recommendationsCount: 5,
       activeDomains: ["DATA", "SECURITY"],
     },
-    findings: { bulletList: "- [HIGH/DATA] Stale schemas" },
-    risks: { bulletList: "- [HIGH/COMPLIANCE] Audit gap" },
+    findings: { bulletList: "- [HIGH/DATA] Stale schemas" ,
+      rows: [],
+    },
+    risks: { bulletList: "- [HIGH/COMPLIANCE] Audit gap" ,
+      rows: [],
+    },
     recommendations: {
       bulletList: "- [HIGH/DATA] Adopt schema registry",
+      rows: [],
     },
     section: {
       executive_summary: "Two-paragraph sponsor summary.",

@@ -53,11 +53,16 @@ function baseOutputs(): EngineOutputs {
       recommendationsCount: 5,
       activeDomains: ["security", "data"],
     },
-    findings: { bulletList: "" },
-    risks: { bulletList: "" },
+    findings: { bulletList: "" ,
+      rows: [],
+    },
+    risks: { bulletList: "" ,
+      rows: [],
+    },
     recommendations: {
       bulletList:
         "- [HIGH/security] Establish baseline IAM controls\n- [MEDIUM/data] Inventory PII flows\n- [MEDIUM/architecture] Confirm tenancy model",
+      rows: [],
     },
     section: {
       open_questions: "- Q1: Is region-pairing finalised?",

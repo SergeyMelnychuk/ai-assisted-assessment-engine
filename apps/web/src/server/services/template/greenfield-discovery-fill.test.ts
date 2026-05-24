@@ -74,14 +74,18 @@ function baseOutputs(): EngineOutputs {
       recommendationsCount: 2,
       activeDomains: ["architecture", "security"],
     },
-    findings: { bulletList: "" },
+    findings: { bulletList: "" ,
+      rows: [],
+    },
     risks: {
       bulletList:
         "- [HIGH/security] Identity provider lock-in\n- [MEDIUM/architecture] Single-region failover gap",
+      rows: [],
     },
     recommendations: {
       bulletList:
         "- [HIGH/architecture] Adopt event-driven core\n- [MEDIUM/security] Externalise secrets",
+      rows: [],
     },
     section: {
       target_capabilities: "- Multi-tenant data isolation",

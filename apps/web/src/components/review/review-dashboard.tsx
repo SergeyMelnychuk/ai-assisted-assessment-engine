@@ -30,10 +30,34 @@ export function ReviewDashboard({
 }: {
   deliverableId: string;
 }) {
+  // Wrapper-component gatekeep — see the matching note in
+  // `deliverable-preview.tsx`. An `enabled` flag on the hook alone
+  // wasn't enough to stop a transient `{}` request from firing
+  // during regeneration. Bailing here prevents the inner component
+  // (which owns the hooks) from mounting at all on those renders.
+  if (typeof deliverableId !== "string" || deliverableId.length === 0) {
+    return null;
+  }
+  return (
+    <ReviewDashboardInner key={deliverableId} deliverableId={deliverableId} />
+  );
+}
+
+function ReviewDashboardInner({
+  deliverableId,
+}: {
+  deliverableId: string;
+}) {
   const utils = trpc.useUtils();
   const query = trpc.review.deliverableProgress.useQuery(
     { deliverableId },
-    { refetchInterval: 4_000 },
+    {
+      // Belt-and-suspenders — the wrapper above guarantees a non-empty
+      // string id, but keep the guard so a future refactor forgetting
+      // the wrapper doesn't regress the bug.
+      enabled: deliverableId.length > 0,
+      refetchInterval: 4_000,
+    },
   );
   const approveMutation = trpc.review.approveDeliverable.useMutation({
     onSuccess: async () => {

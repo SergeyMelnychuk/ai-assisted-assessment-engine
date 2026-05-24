@@ -70,10 +70,15 @@ function baseOutputs(): EngineOutputs {
       recommendationsCount: 0,
       activeDomains: [],
     },
-    findings: { bulletList: "- [HIGH/security] MFA missing on admin tier" },
-    risks: { bulletList: "- [HIGH/delivery] Vendor dependency on legacy SDK" },
+    findings: { bulletList: "- [HIGH/security] MFA missing on admin tier" ,
+      rows: [],
+    },
+    risks: { bulletList: "- [HIGH/delivery] Vendor dependency on legacy SDK" ,
+      rows: [],
+    },
     recommendations: {
       bulletList: "- [P1/security] Roll out MFA across the admin estate",
+      rows: [],
     },
     section: {
       headline_findings:

@@ -93,9 +93,15 @@ function baseOutputs(): EngineOutputs {
       recommendationsCount: 0,
       activeDomains: [],
     },
-    findings: { bulletList: "" },
-    risks: { bulletList: "" },
-    recommendations: { bulletList: "" },
+    findings: { bulletList: "" ,
+      rows: [],
+    },
+    risks: { bulletList: "" ,
+      rows: [],
+    },
+    recommendations: { bulletList: "" ,
+      rows: [],
+    },
     section: {
       team_proposal_overview:
         "Security-heavy team mix reflects identity-and-access dominance in the findings.",

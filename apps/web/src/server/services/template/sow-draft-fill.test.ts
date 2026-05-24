@@ -53,9 +53,15 @@ function baseOutputs(overrides: Partial<EngineOutputs> = {}): EngineOutputs {
       recommendationsCount: 0,
       activeDomains: [],
     },
-    findings: { bulletList: "" },
-    risks: { bulletList: "" },
-    recommendations: { bulletList: "" },
+    findings: { bulletList: "" ,
+      rows: [],
+    },
+    risks: { bulletList: "" ,
+      rows: [],
+    },
+    recommendations: { bulletList: "" ,
+      rows: [],
+    },
     section: {
       sow_scope: "Provider will deliver discovery, target-state design, and implementation guidance.",
       sow_deliverables_summary:

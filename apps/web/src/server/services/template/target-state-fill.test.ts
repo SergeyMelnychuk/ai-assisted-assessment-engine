@@ -67,10 +67,15 @@ function baseOutputs(overrides: Partial<EngineOutputs> = {}): EngineOutputs {
       recommendationsCount: 0,
       activeDomains: [],
     },
-    findings: { bulletList: "- [HIGH/Architecture] Monolithic core" },
-    risks: { bulletList: "- [HIGH/Delivery] Limited platform skill" },
+    findings: { bulletList: "- [HIGH/Architecture] Monolithic core" ,
+      rows: [],
+    },
+    risks: { bulletList: "- [HIGH/Delivery] Limited platform skill" ,
+      rows: [],
+    },
     recommendations: {
       bulletList: "- [HIGH/Architecture] Move to event-driven core",
+      rows: [],
     },
     section: {
       target_state_findings_drivers: "- Stale schemas slow every release.",
