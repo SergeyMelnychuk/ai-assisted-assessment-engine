@@ -9,7 +9,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DeliverablePreview } from "./deliverable-preview";
 import { DeliverableInFlightBanner } from "./deliverable-in-flight-banner";
 import { TemplatePicker } from "@/components/templates/template-picker";
-import { TemplateFillDownload } from "@/components/templates/template-fill-download";
 
 /**
  * The per-type template kind matches the deliverable type 1:1
@@ -113,7 +112,30 @@ export function DeliverablesWorkspace({
     { refetchInterval: 5_000 },
   );
 
+  // Regeneration tracking — see the matching note on
+  // `isSelectedRegenerating` below. We pin the type the user just
+  // triggered + the id (if any) the list had for that type at the
+  // moment they clicked Generate. The "regen done" signal is a
+  // refresh of the list that shows a NEW id for that type (or the
+  // first-ever id, when there was no prior deliverable). While we're
+  // pinned, queries on the deleted-old-id are skipped to avoid the
+  // transient 404 chain.
+  const [regeneratingType, setRegeneratingType] =
+    useState<DeliverableType | null>(null);
+  const [regenSnapshotId, setRegenSnapshotId] = useState<string | null>(null);
+
   const generateMutation = trpc.deliverable.generate.useMutation({
+    onMutate: (variables: { deliverableType?: DeliverableType }) => {
+      const type = variables.deliverableType ?? "ASSESSMENT_REPORT";
+      setRegeneratingType(type);
+      // Snapshot the current deliverable id (if any) of this type, so
+      // we can detect when the list reveals a NEW one for the same
+      // type — that's the signal the worker finished.
+      const current = (listQuery.data ?? []).find(
+        (d) => d.deliverableType === type,
+      );
+      setRegenSnapshotId(current?.id ?? null);
+    },
     onSuccess: async () => {
       setJustQueued(true);
       await Promise.all([
@@ -124,7 +146,30 @@ export function DeliverablesWorkspace({
       ]);
       setTimeout(() => setJustQueued(false), 4_000);
     },
+    onError: () => {
+      // Mutation rejected — clear regen state so the UI doesn't sit on
+      // a "regenerating…" placeholder forever.
+      setRegeneratingType(null);
+      setRegenSnapshotId(null);
+    },
   });
+
+  // Detect regen completion: when the list now has a deliverable of
+  // the pinned type with a DIFFERENT id from our snapshot (or a first
+  // id when there was no prior). At that point the OLD id is gone,
+  // the parent's auto-select effect will switch `selectedId` to the
+  // new one, and we can resume polling.
+  useEffect(() => {
+    if (!regeneratingType) return;
+    const list = listQuery.data ?? [];
+    const currentForType = list.find(
+      (d) => d.deliverableType === regeneratingType,
+    );
+    if (currentForType && currentForType.id !== regenSnapshotId) {
+      setRegeneratingType(null);
+      setRegenSnapshotId(null);
+    }
+  }, [listQuery.data, regeneratingType, regenSnapshotId]);
 
   // Auto-select the newest deliverable the first time the list lands. Also
   // re-select when the selected one disappears (e.g. DRAFT replaced by a
@@ -145,9 +190,15 @@ export function DeliverablesWorkspace({
   const selectedDeliverable = selectedId
     ? list.find((d) => d.id === selectedId)
     : null;
-  const selectedFillKind = selectedDeliverable
-    ? templateKindForDeliverable(selectedDeliverable.deliverableType)
-    : null;
+  // Is the deliverable the user is currently viewing the same TYPE as
+  // a regeneration we just triggered? If so, suppress its child
+  // queries (getById, deliverableProgress) until the worker finishes
+  // and the list reveals the new id. Avoids the cascade of
+  // `deliverable.getById` 404s during the deletion window of the
+  // atomic-persist transaction.
+  const isSelectedRegenerating =
+    !!selectedDeliverable &&
+    selectedDeliverable.deliverableType === regeneratingType;
 
   return (
     <div className="space-y-4">
@@ -243,18 +294,12 @@ export function DeliverablesWorkspace({
             {generateMutation.error.message}
           </p>
         ) : null}
-        {/* Picker-scoped download — shows the populated file matching
-            the dropdown's kind. Hidden when the picker matches the
-            currently-previewed deliverable, since `DeliverablePreview`
-            now renders its own per-deliverable download right under
-            the summary card and showing both would mean two identical
-            cards on screen for the same file. */}
-        {selectedFillKind !== pickerKind ? (
-          <TemplateFillDownload
-            assessmentId={assessmentId}
-            kind={pickerKind}
-          />
-        ) : null}
+        {/* No download card here. `DeliverablePreview` renders its own
+            per-deliverable download right under the summary card —
+            selecting a deliverable in the sidebar shows it. Showing a
+            picker-scoped download in this top zone was confusing when
+            the user wasn't actively re-generating, and produced a
+            duplicate when picker + selection matched. */}
       </div>
 
       <div className="grid gap-6 md:grid-cols-[260px_1fr]">
@@ -314,7 +359,10 @@ export function DeliverablesWorkspace({
           // the artefact it belongs to instead of dangling at the
           // bottom of the page. The previous bottom-of-page card,
           // gated by `selectedFillKind !== pickerKind`, lived here.
-          <DeliverablePreview deliverableId={selectedId} />
+          <DeliverablePreview
+            deliverableId={selectedId}
+            isRegenerating={isSelectedRegenerating}
+          />
         ) : (
           <div className="rounded-md border bg-muted/20 px-4 py-12 text-center text-sm text-muted-foreground">
             Generate a deliverable to see the preview here.

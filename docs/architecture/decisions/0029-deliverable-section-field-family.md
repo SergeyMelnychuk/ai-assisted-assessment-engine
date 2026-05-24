@@ -11,7 +11,10 @@
   family;
   [ADR-0020](./0020-soft-failure-best-effort-work.md) — section
   resolution stays soft-failure: a missing key produces a warning, not
-  a crashed run.
+  a crashed run;
+  [ADR-0030](./0030-deliverable-section-character-budgets.md) — governs
+  how those section bodies are sized so they fit the fixed-height
+  text frames they land in.
 
 ## Context
 

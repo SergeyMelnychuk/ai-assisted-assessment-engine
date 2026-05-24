@@ -1,29 +1,29 @@
 {
   "key": "executive_summary",
   "name": "Executive Summary",
-  "description": "Sponsor-facing 7-slide deck. Engine fills cover + numeric stats; AI writes the three narrative panels (headline findings, top risks, executive recommendations) so the sponsor reads curated prose, not raw bullet dumps.",
+  "description": "Sponsor-facing 7-slide deck. Engine fills cover + numeric stats; AI writes the three narrative panels (headline findings, top risks, executive recommendations) so the sponsor reads curated prose, not raw bullet dumps. **Hard constraint:** every section lands in a fixed-height slide text frame (≈3.5\" × 11\"). The total budget per section is ~600 characters across no more than 5 bullets. Going over makes PowerPoint auto-shrink the text to illegible sizes — keep it tight.",
   "deliverableType": "EXECUTIVE_SUMMARY",
   "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "AUDIT", "PRE_IMPLEMENTATION", "GREENFIELD"],
   "sections": [
     {
       "key": "headline_findings",
       "title": "Headline findings",
-      "purpose": "5–7 highest-severity findings written for an executive sponsor — not the engineering team. Each as a short markdown bullet: a strong opening clause (the issue), one or two sentences of business consequence, no domain code prefixes ([CRITICAL/security_iam] etc.) Cut the long tail; the engineering audience sees the full list elsewhere. Order by severity desc, then by likely business impact.",
+      "purpose": "Up to 5 most material findings for an executive sponsor.\n\n**Strict format:**\n- Markdown bullet list, NO sub-bullets.\n- Each bullet: ONE sentence, ≤ 18 words.\n- Lead with the issue in 2-4 words (optionally bold), then the business consequence.\n- NO domain/severity prefixes like `[CRITICAL/security_iam]`.\n- NO supporting paragraphs, NO follow-up sentences.\n\nTotal output ≤ 600 characters. Cut the long tail aggressively — the engineering audience sees the full list elsewhere. Order by severity then by business impact.",
       "targetLength": "short",
       "audience": "C-level sponsor"
     },
     {
       "key": "top_risks",
       "title": "Top risks",
-      "purpose": "5–7 most material risks. Same audience and prose rules as headline_findings. Each bullet: title in bold-ish opening clause, one sentence on impact, one sentence on a credible mitigation. Skip risks rated LOW. No category-code prefixes.",
+      "purpose": "Up to 5 most material risks. Skip LOW severity.\n\n**Strict format:**\n- Markdown bullet list, NO sub-bullets.\n- Each bullet: ONE sentence, ≤ 22 words. Pattern: `**Risk title** — impact in plain language; mitigation in a clause.`\n- NO category-code prefixes.\n\nTotal output ≤ 700 characters. The slide text frame is fixed-height — exceeding the budget makes PowerPoint shrink the text to unreadable sizes.",
       "targetLength": "short",
       "audience": "C-level sponsor"
     },
     {
       "key": "executive_recommendations",
       "title": "Priority recommendations",
-      "purpose": "5–8 priority recommendations curated for the sponsor. Cluster by theme if helpful. Each bullet: action verb opener, the outcome it unlocks, and (where defensible) one phrase on effort relative to value. Do NOT paste the raw recommendations list — synthesise. No priority/domain prefixes.",
-      "targetLength": "medium",
+      "purpose": "Up to 5 priority recommendations the sponsor should approve next.\n\n**Strict format:**\n- Markdown bullet list, NO sub-bullets.\n- Each bullet: ONE sentence, ≤ 20 words. Pattern: `**Action verb opener** — outcome unlocked; effort hint if defensible.`\n- Synthesise — do NOT paste the raw recommendations list.\n- NO priority/domain prefixes.\n\nTotal output ≤ 650 characters. Cluster by theme only if it actually saves words.",
+      "targetLength": "short",
       "audience": "C-level sponsor"
     }
   ],

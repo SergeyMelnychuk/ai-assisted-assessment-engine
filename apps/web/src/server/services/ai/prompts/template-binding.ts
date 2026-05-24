@@ -54,6 +54,7 @@ Hard rules:
 - Bind only what you are confident about. It's better to leave a field unbound than to point it at a guess. Unbound fields do nothing; mis-bound fields produce broken deliverables for real customers.
 - A defined name with a clear semantic match (e.g. \`TotalEffortHours\` → totals.effortHoursLow / High) is preferable to a raw cell ref — defined names survive layout edits.
 - Prefer \`section.<key>\` over raw \`findings.bulletList\` / \`risks.bulletList\` / \`recommendations.bulletList\` for any placeholder that should hold prose / curated narrative. The bullet-list engine fields are pre-formatted dumps with internal severity/domain prefixes — they read poorly in sponsor-facing copy. Section keys carry AI-written narrative tailored to the deliverable.
+- Re-propose flow: if a \`# Prior binding\` block is provided, REFINE that binding rather than starting fresh. Keep entries the reviewer didn't flag, revisit only what their feedback called out, and add entries for slots the prior binding missed. If no prior binding is provided, generate a binding from scratch — the reviewer is asking you to forget what was there before (typically because the prior binding was corrupted or far off).
 
 Style:
 - Be terse on \`note\` fields — one short sentence, not a paragraph.
@@ -87,20 +88,44 @@ export function buildTemplateBindingPrompt(input: {
    */
   sectionCatalog?: string;
   structureJson: string;
+  /**
+   * Optional reviewer feedback for a re-propose run. Free-form text
+   * the reviewer wrote in the "what to change" box on the UI. The
+   * prompt instructs the AI to take it as a direction, not a strict
+   * order — e.g. if the reviewer says "bind X to project.industry"
+   * but project.industry doesn't suit X semantically, the AI is
+   * allowed to push back. Combined with `priorBindingJson` for the
+   * refine flow; alone, it's a hint for a from-scratch re-propose.
+   */
+  feedback?: string;
+  /**
+   * Optional prior binding JSON for the refine flow. When present,
+   * the prompt tells the AI to start from this binding rather than
+   * generate one fresh — keeping entries the reviewer didn't flag,
+   * revisiting the ones the feedback called out, and filling slots
+   * that were previously missed. Omit for from-scratch re-proposes.
+   */
+  priorBindingJson?: string;
 }): string {
   const sectionsBlock =
     input.sectionCatalog && input.sectionCatalog.trim().length > 0
       ? `\n# AI section keys for this deliverable type (open list — use \`section.<key>\` to bind narrative placeholders to AI-written prose)\n${input.sectionCatalog}\n`
+      : "";
+  const priorBlock = input.priorBindingJson
+    ? `\n# Prior binding (REFINE this — keep entries the reviewer didn't flag, revisit the ones they called out, and fill slots you previously missed; do NOT start from scratch)\n\`\`\`json\n${input.priorBindingJson}\n\`\`\`\n`
+    : "";
+  const feedbackBlock =
+    input.feedback && input.feedback.trim().length > 0
+      ? `\n# Reviewer feedback\n${input.feedback.trim()}\n\nTreat this as the reviewer's direction. If a request would conflict with the hard rules (e.g. bind to a field outside the catalog), follow the rules and skip the conflicting part — don't fight the catalog.\n`
       : "";
   return `# Template kind
 ${input.templateKind}
 
 # Engine output fields (closed list — every \`field\` in your output MUST come from here unless it's a section key from the block below)
 ${input.engineFieldsCatalog}
-${sectionsBlock}
-# Template structural extract
+${sectionsBlock}# Template structural extract
 ${input.structureJson}
-
+${priorBlock}${feedbackBlock}
 # Your turn
 Return the binding JSON document. Output JSON only.`;
 }

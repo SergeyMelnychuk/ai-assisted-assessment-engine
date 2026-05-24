@@ -73,6 +73,16 @@ function ReviewDashboardInner({
     return <Skeleton className="h-32 w-full" />;
   }
   if (query.error) {
+    const isNotFound = query.error.data?.code === "NOT_FOUND";
+    if (isNotFound) {
+      // Regeneration race — same as the matching branch in
+      // `deliverable-preview.tsx`. The worker just deleted this
+      // deliverable; the parent's listQuery will refresh `selectedId`
+      // to the new one shortly. Render nothing instead of a red
+      // banner; kick the list refetch directly so the gap is brief.
+      void utils.deliverable.listByAssessment.invalidate();
+      return null;
+    }
     return (
       <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
         {query.error.message}

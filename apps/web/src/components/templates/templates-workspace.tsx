@@ -246,6 +246,20 @@ export function TemplatesWorkspace({
                   ) : null}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
+                  {/* Source-file download — same on live + archived
+                      rows. Streams the original uploaded (or
+                      workspace-default) template from MinIO via the
+                      auth-checked /api/templates/[id]/download route.
+                      Stays as a plain <a> so the browser handles the
+                      download lifecycle (progress, save-as) without
+                      reading the file into memory. */}
+                  <a
+                    href={`/api/templates/${row.id}/download?download=1`}
+                    className="text-sm font-medium text-primary underline-offset-2 hover:underline"
+                    title={`Download ${row.filename}`}
+                  >
+                    Download
+                  </a>
                   {isArchived ? (
                     // Archived rows: Restore + Delete only. Two-click
                     // confirm on Delete because it's irreversible and

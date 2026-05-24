@@ -78,7 +78,26 @@ export type DocumentJobData =
   // Phase 4: customer-uploadable templates. After upload the proposer
   // job runs the AI binding pass and writes the result onto
   // `Template.bindingJson` for human review.
-  | { type: "propose-template-binding"; templateId: string };
+  //
+  // The `isRepropose`, `feedback`, and `priorBinding` fields are
+  // populated by the `template.reproposeBinding` mutation. They drive
+  // two re-propose modes inside the job:
+  //   - **Refine** (`priorBinding` set): the AI starts from the
+  //     existing binding and revises it according to feedback.
+  //   - **From scratch** (`priorBinding` absent, `isRepropose: true`):
+  //     the AI ignores the prior binding entirely and proposes a
+  //     fresh one. Used when the existing binding is corrupted past
+  //     the point where refining helps.
+  // `isRepropose: true` also tells the job to bypass its "skip when
+  // bindingJson already exists" guard — without it, every re-propose
+  // would be silently dropped because the row already has a binding.
+  | {
+      type: "propose-template-binding";
+      templateId: string;
+      isRepropose?: boolean;
+      feedback?: string;
+      priorBinding?: unknown;
+    };
 
 export const documentQueue =
   globalForQueue.documentQueue ??
@@ -353,11 +372,22 @@ export async function enqueueAgentHarness(runId: string): Promise<string> {
  */
 export async function enqueueProposeTemplateBinding(
   templateId: string,
+  opts: {
+    isRepropose?: boolean;
+    feedback?: string;
+    priorBinding?: unknown;
+  } = {},
 ): Promise<string> {
   const jobId = `tpl-bind-${templateId}-${Date.now()}`;
   const job = await documentQueue.add(
     "propose-template-binding",
-    { type: "propose-template-binding", templateId },
+    {
+      type: "propose-template-binding",
+      templateId,
+      isRepropose: opts.isRepropose,
+      feedback: opts.feedback,
+      priorBinding: opts.priorBinding,
+    },
     { jobId },
   );
   return job.id ?? jobId;

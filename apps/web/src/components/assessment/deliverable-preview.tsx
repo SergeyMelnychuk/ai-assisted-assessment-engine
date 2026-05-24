@@ -85,8 +85,13 @@ interface DiagramRow {
  */
 export function DeliverablePreview({
   deliverableId,
+  isRegenerating = false,
 }: {
   deliverableId: string;
+  /** True while the workspace knows a regeneration of this deliverable's
+   *  type is in flight. Suppresses child queries so we don't keep
+   *  polling a soon-to-be-deleted id. */
+  isRegenerating?: boolean;
 }) {
   if (typeof deliverableId !== "string" || deliverableId.length === 0) {
     return null;
@@ -95,14 +100,17 @@ export function DeliverablePreview({
     <DeliverablePreviewInner
       key={deliverableId}
       deliverableId={deliverableId}
+      isRegenerating={isRegenerating}
     />
   );
 }
 
 function DeliverablePreviewInner({
   deliverableId,
+  isRegenerating,
 }: {
   deliverableId: string;
+  isRegenerating: boolean;
 }) {
   const utils = trpc.useUtils();
   const { data: sessionData } = useSession();
@@ -112,11 +120,13 @@ function DeliverablePreviewInner({
   const query = trpc.deliverable.getById.useQuery(
     { id: deliverableId },
     {
-      // Belt-and-suspenders against the same scenario the wrapper
-      // catches — the wrapper guarantees we won't be called with an
-      // empty id, but if a future refactor forgets the wrapper this
-      // keeps the bug from regressing.
-      enabled: deliverableId.length > 0,
+      // Skip the poll while the workspace knows a regeneration of
+      // this deliverable's TYPE is in flight — the worker is about to
+      // delete this id, polling it would just produce a chain of 404s
+      // in the network tab. The `deliverableId.length > 0` clause is
+      // belt-and-suspenders for an earlier undefined-during-render race
+      // (kept in case the wrapper is ever refactored away).
+      enabled: !isRegenerating && deliverableId.length > 0,
       refetchInterval: 5_000,
     },
   );
@@ -147,6 +157,26 @@ function DeliverablePreviewInner({
     },
   });
 
+  // While the workspace is regenerating this deliverable's type, the
+  // worker is about to delete this row. Don't poll it; show a quiet
+  // "Regenerating…" panel. The InFlight banner above already tells the
+  // user how the job is progressing; this panel just keeps the preview
+  // surface coherent.
+  if (isRegenerating) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Regenerating deliverable…
+          </CardTitle>
+          <CardDescription>
+            The previous version is being replaced. The new content will
+            appear here when the worker finishes.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
   if (query.isLoading) {
     return (
       <div className="space-y-3">
@@ -158,16 +188,37 @@ function DeliverablePreviewInner({
   }
   if (query.error) {
     const isNotFound = query.error.data?.code === "NOT_FOUND";
+    if (isNotFound) {
+      // Regeneration race: the worker's atomic-persist transaction
+      // just deleted the old deliverable row and created a new one.
+      // The parent's `listByAssessment` query will refetch and re-pick
+      // `selectedId` to the new id within one poll tick — render a
+      // calm "switching…" panel meanwhile, not a destructive red
+      // error card. Also kick the list refetch directly so we don't
+      // wait for the next poll interval.
+      void utils.deliverable.listByAssessment.invalidate();
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              Switching deliverable…
+            </CardTitle>
+            <CardDescription>
+              The previous deliverable was replaced by a new generation.
+              Loading the latest one.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      );
+    }
     return (
       <Card className="border-destructive/40 bg-destructive/5">
         <CardHeader>
           <CardTitle className="text-destructive">
-            {isNotFound ? "Deliverable not found" : "Couldn't load deliverable"}
+            Couldn&apos;t load deliverable
           </CardTitle>
           <CardDescription className="text-destructive/80">
-            {isNotFound
-              ? "It may have been deleted, or you don't have access."
-              : query.error.message}
+            {query.error.message}
           </CardDescription>
         </CardHeader>
       </Card>

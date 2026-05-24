@@ -321,19 +321,43 @@ async function fillDocxPlaceholders(
   const yauzl = await import("yauzl-promise");
   const yazl = await import("yazl");
 
-  // Build the substitution map.
+  // Build two streams of substitutions:
+  //   - `subs` — plain `{{token}}` replacements (the v1 path).
+  //   - `rowGroups` — `docx.tableRow` entries grouped by `groupKey`,
+  //     each producing a per-row clone of a `<w:tr>` template row.
   const subs: Array<{ token: string; value: string }> = [];
+  const rowGroups = new Map<
+    string,
+    Array<{ token: string; values: ReadonlyArray<string | number> }>
+  >();
   const warnings: string[] = [];
   for (const entry of binding.entries) {
-    if (entry.target.kind !== "docx.placeholder") {
-      // bookmarks not yet supported
-      if (entry.target.kind === "docx.bookmark") {
-        warnings.push(
-          `docx.bookmark target on "${entry.field}" not yet supported (Slice 5).`,
-        );
-      }
+    if (entry.target.kind === "docx.bookmark") {
+      warnings.push(
+        `docx.bookmark target on "${entry.field}" not yet supported (Slice 5).`,
+      );
       continue;
     }
+    if (entry.target.kind === "docx.tableRow") {
+      if (!entry.groupKey) {
+        warnings.push(
+          `Entry "${entry.field}" uses docx.tableRow but has no groupKey — skipping.`,
+        );
+        continue;
+      }
+      const v = resolveEngineField(outputs, entry.field);
+      if (!Array.isArray(v)) {
+        warnings.push(
+          `Field "${entry.field}" did not resolve to an array for docx.tableRow.`,
+        );
+        continue;
+      }
+      const grp = rowGroups.get(entry.groupKey) ?? [];
+      grp.push({ token: entry.target.token, values: v });
+      rowGroups.set(entry.groupKey, grp);
+      continue;
+    }
+    if (entry.target.kind !== "docx.placeholder") continue;
     const v = resolveEngineField(outputs, entry.field);
     if (v === undefined) {
       warnings.push(`Field "${entry.field}" did not resolve.`);
@@ -345,7 +369,7 @@ async function fillDocxPlaceholders(
     });
   }
 
-  if (subs.length === 0) {
+  if (subs.length === 0 && rowGroups.size === 0) {
     return {
       buffer: templateBuffer,
       warnings: warnings.concat("No docx placeholders bound."),
@@ -364,6 +388,22 @@ async function fillDocxPlaceholders(
     let content = Buffer.concat(chunks);
     if (entry.filename === "word/document.xml") {
       let text = content.toString("utf8");
+      // Apply table-row expansions FIRST. They restructure the XML,
+      // so doing them before the scalar substitutions keeps the
+      // per-row clone tokens addressable as-is. Each clone then
+      // carries placeholders that the scalar pass will replace
+      // (e.g. clones of `{{role_name}}` get substituted with each
+      // value during the loop below).
+      for (const [groupKey, columns] of rowGroups) {
+        const { xml, hit } = expandDocxTableRow({
+          xml: text,
+          groupKey,
+          columns,
+          warnings,
+        });
+        text = xml;
+        if (hit) filled++;
+      }
       for (const { token, value } of subs) {
         const { xml, hit } = substituteWithMarkdown({
           xml: text,
@@ -491,6 +531,86 @@ function isPptxTextEntry(filename: string): boolean {
     /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(filename) ||
     /^ppt\/notesSlides\/notesSlide\d+\.xml$/.test(filename)
   );
+}
+
+// ─── Docx table-row iteration ─────────────────────────────────────
+
+/**
+ * Expand a Word table's "template row" into one row per array
+ * element. The binding declares one entry per column (token =
+ * `{{role_name}}`, `{{role_seniority}}`, …) all sharing a `groupKey`;
+ * this function finds the `<w:tr>` that contains the FIRST column's
+ * token, clones the row N times (N = the array length), substitutes
+ * each clone's tokens with the per-row values, and replaces the
+ * original `<w:tr>` with the concatenated clones.
+ *
+ * Restrictions:
+ *   - The template row must hold each column token in a single run
+ *     (no split-across-`<w:r>` tokens — same caveat as the v1 docx
+ *     filler). Authors keep tokens in one edit.
+ *   - All columns in a group must resolve to the same array length;
+ *     we use the first column's length and pad shorter ones with
+ *     empty strings.
+ *
+ * Returns the rewritten XML and a `hit` flag (true when we actually
+ * found and expanded a row).
+ */
+function expandDocxTableRow(args: {
+  xml: string;
+  groupKey: string;
+  columns: ReadonlyArray<{ token: string; values: ReadonlyArray<string | number> }>;
+  warnings: string[];
+}): { xml: string; hit: boolean } {
+  const { groupKey, columns, warnings } = args;
+  let { xml } = args;
+  if (columns.length === 0) {
+    return { xml, hit: false };
+  }
+
+  // Length is the longest array we received; we pad the others.
+  const rowCount = columns.reduce((acc, c) => Math.max(acc, c.values.length), 0);
+  if (rowCount === 0) {
+    return { xml, hit: false };
+  }
+
+  const anchorToken = columns[0].token;
+  // Find the `<w:tr>` that contains the anchor token. Non-greedy
+  // `[\s\S]*?` because Word tables don't nest as a single row.
+  const rowRe = new RegExp(
+    `<w:tr\\b[^>]*>([\\s\\S]*?)</w:tr>`,
+    "g",
+  );
+  let templateMatch: RegExpExecArray | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = rowRe.exec(xml)) !== null) {
+    if (m[0].includes(anchorToken)) {
+      templateMatch = m;
+      break;
+    }
+  }
+  if (!templateMatch) {
+    warnings.push(
+      `docx.tableRow group "${groupKey}": no <w:tr> contains anchor token ${anchorToken}.`,
+    );
+    return { xml, hit: false };
+  }
+
+  const templateRowXml = templateMatch[0];
+  const clones: string[] = [];
+  for (let i = 0; i < rowCount; i += 1) {
+    let row = templateRowXml;
+    for (const col of columns) {
+      const raw = col.values[i];
+      const value = raw === undefined ? "" : String(raw);
+      row = row.split(col.token).join(escapeXml(value));
+    }
+    clones.push(row);
+  }
+  xml =
+    xml.slice(0, templateMatch.index) +
+    clones.join("") +
+    xml.slice(templateMatch.index + templateRowXml.length);
+  return { xml, hit: true };
 }
 
 // ─── Markdown-aware substitution ──────────────────────────────────

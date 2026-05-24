@@ -175,7 +175,7 @@ The README is the entry point. The deep references:
 
 - `docs/design/product-design.md` — product domain model, MVP scope, non-goals (1600+ lines).
 - `docs/architecture/README.md` — full technical architecture rationale.
-- `docs/architecture/decisions/` — numbered ADRs (0001–0029), immutable once accepted. Read these before changing the things they describe (ingest decoupling, RAG, archive gates, PAT encryption, evidence trail, prompt caching, agent harness, multi-provider routing, template binding, background-job lifecycle, soft-failure, workflow planner, credential vault, DB-backed feature flags, per-domain tagging, engagement deletion + MinIO sweep, agent trace viewer, hybrid retrieval, evidence citations, deliverable-section field family).
+- `docs/architecture/decisions/` — numbered ADRs (0001–0030), immutable once accepted. Read these before changing the things they describe (ingest decoupling, RAG, archive gates, PAT encryption, evidence trail, prompt caching, agent harness, multi-provider routing, template binding, background-job lifecycle, soft-failure, workflow planner, credential vault, DB-backed feature flags, per-domain tagging, engagement deletion + MinIO sweep, agent trace viewer, hybrid retrieval, evidence citations, deliverable-section field family, deliverable-section character budgets).
 - `docs/guides/running-locally.md` — environment, ports, services.
 - `docs/guides/engagements.md` — consultant-facing engagement handbook: create flow, workspace tabs, members/access, status lifecycle, archive vs delete.
 - `docs/guides/knowledge-base.md` — human-readable KB guide: artifact families, per-assessment question selection, what feeds AI vs what fills output containers, edit workflow.

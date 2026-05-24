@@ -1,36 +1,36 @@
 {
   "key": "roadmap",
   "name": "Roadmap",
-  "description": "Phased roadmap deck: cover, phasing rationale, three phase cards, milestones & owners. Engine fills cover + totals; AI writes the phase scope narratives and the milestones section.",
+  "description": "Phased roadmap deck: cover, phasing rationale, three phase cards, milestones & owners. Engine fills cover + totals; AI writes the phase scope narratives and the milestones section. **Hard constraint:** every section lands in a fixed-height slide text frame (≈4.0\" × 7.5\" for phase scope, ≈2.0\" × 11.8\" for milestones). The total budget per phase section is ~500 characters; milestones ≤ 700 characters. Going over makes PowerPoint auto-shrink to unreadable sizes.",
   "deliverableType": "ROADMAP",
   "applicableModes": ["EXISTING_SYSTEM", "MODERNIZATION", "AUDIT", "PRE_IMPLEMENTATION", "GREENFIELD"],
   "sections": [
     {
       "key": "phase_1_scope",
       "title": "Phase 1 — Foundation scope",
-      "purpose": "Describe the scope of Phase 1 (Foundation) for this assessment. Foundation is the de-risking wave: discovery validation, prerequisites, high-risk dependencies, the most critical findings/risks the team must address before scaling work. Use prose paragraphs and short bullet lists where helpful. Anchor every claim in evidence (findings, risks, recommendations, project context). Do NOT include effort hours, costs, or dates — those are filled separately by the engine on the same slide. Keep it 3–6 sentences plus an optional 3–5 item bullet list of in-scope workstreams.",
+      "purpose": "Describe the scope of Phase 1 (Foundation): the de-risking wave — prerequisites, high-risk dependencies, the most critical findings/risks the team must address before scaling work.\n\n**Strict format:**\n- Open with ONE sentence (≤ 25 words) summarising the wave's intent.\n- Then a markdown bullet list of 3–5 workstreams, each ≤ 12 words.\n- NO hours, costs, or dates — engine fills those on the same slide.\n\nTotal output ≤ 500 characters.",
       "targetLength": "short",
       "audience": "Engineering leadership"
     },
     {
       "key": "phase_2_scope",
       "title": "Phase 2 — Build scope",
-      "purpose": "Describe the scope of Phase 2 (Build). Build is the throughput wave: the bulk of net-new capability, integrations, hardening of the work seeded in Phase 1. Reference the dependencies Phase 1 closes off. Anchor in concrete findings/recommendations/risks. Prose + optional 3–5 bullets. No hours/cost/dates — engine fills those.",
+      "purpose": "Describe Phase 2 (Build): the throughput wave — net-new capability, integrations, hardening of the work seeded in Phase 1.\n\n**Strict format:**\n- ONE-sentence summary (≤ 25 words) referencing what Phase 1 closed off.\n- Markdown bullet list of 3–5 workstreams, each ≤ 12 words.\n- NO hours/cost/dates.\n\nTotal output ≤ 500 characters.",
       "targetLength": "short",
       "audience": "Engineering leadership"
     },
     {
       "key": "phase_3_scope",
       "title": "Phase 3 — Scale scope",
-      "purpose": "Describe the scope of Phase 3 (Scale). Scale is the optimization wave: rollout, operational maturity, governance hand-off, retiring scaffolding, longer-term recommendations. Anchor to recommendations that are clearly post-Build. Prose + optional 3–5 bullets. No hours/cost/dates — engine fills those.",
+      "purpose": "Describe Phase 3 (Scale): the optimisation wave — rollout, operational maturity, governance hand-off, retiring scaffolding.\n\n**Strict format:**\n- ONE-sentence summary (≤ 25 words).\n- Markdown bullet list of 3–5 workstreams, each ≤ 12 words.\n- NO hours/cost/dates.\n\nTotal output ≤ 500 characters.",
       "targetLength": "short",
       "audience": "Engineering leadership"
     },
     {
       "key": "milestones_owners",
       "title": "Recommended milestones",
-      "purpose": "Synthesise the assessment's CRITICAL + HIGH recommendations into 6–10 actual milestones — outcomes, not tasks. Each milestone should be a single line in the form 'Phase N · MILESTONE NAME — outcome' (e.g. 'Phase 1 · Identity baseline — SSO + MFA enforced on all production paths'). Group implicit by phase if helpful. Skip MEDIUM/LOW recommendations unless they're foundational. DO NOT paste the raw recommendation list — curate, name, and shape into milestones. Output as a tight markdown bullet list.",
-      "targetLength": "medium",
+      "purpose": "Synthesise the assessment's CRITICAL + HIGH recommendations into actual milestones — outcomes, not tasks.\n\n**Strict format:**\n- Up to 8 milestones as a markdown bullet list.\n- Each bullet ≤ 15 words. Pattern: `Phase N · **Milestone name** — outcome.`\n- Skip MEDIUM/LOW recs unless foundational.\n- Do NOT paste the raw recommendations list — curate.\n\nTotal output ≤ 700 characters.",
+      "targetLength": "short",
       "audience": "Sponsor + engineering leadership"
     }
   ],

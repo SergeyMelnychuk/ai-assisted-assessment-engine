@@ -162,23 +162,37 @@ describe("team-proposal-v1 workspace-default shell", () => {
     const xml = await readZipEntry(result.buffer, "word/document.xml");
     expect(xml).toBeDefined();
 
-    // Every token defined in the binding must be substituted.
+    // Every token defined in the binding must be substituted —
+    // covers both `docx.placeholder` (scalar) and `docx.tableRow`
+    // (cloned across rows) targets.
     for (const entry of binding.entries) {
-      if (entry.target.kind === "docx.placeholder") {
+      if (
+        entry.target.kind === "docx.placeholder" ||
+        entry.target.kind === "docx.tableRow"
+      ) {
         expect(xml).not.toContain(entry.target.token);
       }
     }
 
-    // Spot-check a few values landed in the rendered xml. The filler
-    // joins arrays with ", " — the docx escapes "&" but role names
-    // here have none.
+    // Spot-check cover + totals.
     expect(xml).toContain("Acme Migration");
     expect(xml).toContain("Acme Corp");
     expect(xml).toContain("Phase 1 Discovery");
     expect(xml).toContain("Recommended scenario");
-    expect(xml).toContain(
+
+    // The Proposed-team table should now contain each role's data
+    // on its own row, NOT comma-joined into a single cell.
+    // The previous regression rendered them as
+    // "Engagement Lead, Solution Architect, Senior Engineer" in one cell.
+    expect(xml).not.toContain(
       "Engagement Lead, Solution Architect, Senior Engineer",
     );
-    expect(xml).toContain("Principal, Senior, Senior");
+    // Each role name appears separately — and the body XML now
+    // contains the per-role markup so each name is reachable.
+    expect(xml).toContain("Engagement Lead");
+    expect(xml).toContain("Solution Architect");
+    expect(xml).toContain("Senior Engineer");
+    // Per-role justification narrative landed (one of the three).
+    expect(xml).toContain("Anchors target-state design");
   });
 });

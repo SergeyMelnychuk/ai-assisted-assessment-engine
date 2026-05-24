@@ -181,6 +181,21 @@ export const docxTargetSchema = z.discriminatedUnion("kind", [
     kind: z.literal("docx.bookmark"),
     name: z.string(),
   }),
+  /**
+   * Per-row Word-table iteration. Mirrors `xlsx.tableRow` for docx:
+   * the binding entry points at a placeholder token that sits inside
+   * a Word `<w:tr>`; the filler finds that row, clones it once per
+   * array element, and substitutes the per-row token with each
+   * element's value. Multiple binding entries can share the same
+   * row by using the same `groupKey` — typical pattern is one
+   * entry per column (Role, Seniority, Count, …), all keyed on
+   * `groupKey: "roles"`, each with its own column token.
+   */
+  z.object({
+    kind: z.literal("docx.tableRow"),
+    /** The token sitting inside the row's column. */
+    token: z.string(),
+  }),
 ]);
 
 export const targetSchema = z.union([xlsxTargetSchema, docxTargetSchema]);

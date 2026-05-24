@@ -88,6 +88,23 @@ export interface ProposeBindingInput {
   templateBuffer: Buffer;
   /** Forwarded to the AI router's audit row for cost attribution. */
   audit?: { templateId: string };
+  /**
+   * Optional reviewer feedback — free-form text describing what the
+   * reviewer wants improved about the prior binding. Passed verbatim
+   * to the AI under a dedicated "Reviewer feedback" prompt block.
+   * Ignored by the AI unless `priorBinding` is also set, because
+   * feedback without a prior binding has nothing to act on.
+   */
+  feedback?: string;
+  /**
+   * Optional prior binding — when present, the AI is instructed to
+   * **refine** this binding (keep entries the reviewer didn't flag,
+   * revisit the ones they did, fill slots that were previously
+   * missed) rather than start fresh. Omit it to force a from-scratch
+   * proposal (used when the existing binding is corrupted past the
+   * point where refining would help).
+   */
+  priorBinding?: BindingDocument;
 }
 
 export interface ProposeBindingResult {
@@ -212,11 +229,20 @@ export async function proposeTemplateBinding(
           )
           .join("\n");
 
+  // Optional re-propose inputs. Both are independent — feedback can
+  // be passed in either mode (fresh / refine), but `priorBinding` is
+  // what tells the AI to refine vs. start over.
+  const priorBindingJson = input.priorBinding
+    ? JSON.stringify(input.priorBinding, null, 2)
+    : undefined;
+
   const userTurn = buildTemplateBindingPrompt({
     templateKind: input.templateKind,
     engineFieldsCatalog: fieldCatalog,
     sectionCatalog,
     structureJson,
+    feedback: input.feedback,
+    priorBindingJson,
   });
 
   let res;

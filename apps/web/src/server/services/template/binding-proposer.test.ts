@@ -263,4 +263,99 @@ describe("proposeTemplateBinding", () => {
       ?.userContent as string;
     expect(userContent).not.toMatch(/AI section keys/);
   });
+
+  // ─── Re-propose flow ──────────────────────────────────────────────
+
+  it("threads reviewer feedback into the AI prompt", async () => {
+    // The mutation collects feedback from the textarea; the proposer
+    // surfaces it under a dedicated "Reviewer feedback" block so the
+    // model treats it as direction rather than buried context.
+    (callAi as unknown as Mock).mockResolvedValue({
+      result: {
+        version: 1,
+        templateKind: "ROADMAP",
+        entries: [],
+      },
+      tokensUsed: { input: 1, output: 1 },
+    });
+
+    await proposeTemplateBinding({
+      templateKind: "ROADMAP",
+      templateMimeType: DOCX_MIME,
+      templateBuffer: docxBuffer,
+      feedback:
+        "You bound {{revenue}} to project.industry — should be totals.costLow / costHigh.",
+    });
+
+    const userContent = (callAi as unknown as Mock).mock.calls[0]?.[0]
+      ?.userContent as string;
+    expect(userContent).toMatch(/Reviewer feedback/);
+    expect(userContent).toMatch(/\{\{revenue\}\}/);
+    expect(userContent).toMatch(/totals\.costLow/);
+  });
+
+  it("threads prior binding into the prompt for refine mode", async () => {
+    // When a prior binding is provided the prompt MUST instruct the AI
+    // to refine it (keep good entries, revisit flagged ones) rather
+    // than generate from scratch. The system rule + the user-turn
+    // block both must mention it.
+    const priorBinding = {
+      version: 1 as const,
+      templateKind: "ROADMAP" as const,
+      entries: [
+        {
+          field: "project.name",
+          target: {
+            kind: "docx.placeholder" as const,
+            token: "{{project_name}}",
+          },
+        },
+      ],
+    };
+    (callAi as unknown as Mock).mockResolvedValue({
+      result: priorBinding,
+      tokensUsed: { input: 1, output: 1 },
+    });
+
+    await proposeTemplateBinding({
+      templateKind: "ROADMAP",
+      templateMimeType: DOCX_MIME,
+      templateBuffer: docxBuffer,
+      priorBinding,
+    });
+
+    const userContent = (callAi as unknown as Mock).mock.calls[0]?.[0]
+      ?.userContent as string;
+    expect(userContent).toMatch(/Prior binding/);
+    // The actual JSON appears in the prompt so the AI can read it.
+    expect(userContent).toMatch(/\{\{project_name\}\}/);
+  });
+
+  it("omits the prior-binding block when fromScratch mode is in use", async () => {
+    // Mutation's fromScratch=true path simply doesn't pass
+    // priorBinding to the proposer — so the prompt must NOT carry a
+    // "Prior binding" block (else the AI would think there's still
+    // something to refine).
+    (callAi as unknown as Mock).mockResolvedValue({
+      result: {
+        version: 1,
+        templateKind: "ROADMAP",
+        entries: [],
+      },
+      tokensUsed: { input: 1, output: 1 },
+    });
+
+    await proposeTemplateBinding({
+      templateKind: "ROADMAP",
+      templateMimeType: DOCX_MIME,
+      templateBuffer: docxBuffer,
+      feedback: "Just start over please.",
+    });
+
+    const userContent = (callAi as unknown as Mock).mock.calls[0]?.[0]
+      ?.userContent as string;
+    expect(userContent).not.toMatch(/Prior binding/);
+    // But feedback is still threaded.
+    expect(userContent).toMatch(/Just start over please\./);
+  });
 });

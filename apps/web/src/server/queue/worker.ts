@@ -60,7 +60,11 @@ const worker = new Worker<DocumentJobData>(
       case "agent-harness":
         return agentHarnessJob(data.runId);
       case "propose-template-binding":
-        return proposeTemplateBindingJob(data.templateId);
+        return proposeTemplateBindingJob(data.templateId, {
+          isRepropose: data.isRepropose,
+          feedback: data.feedback,
+          priorBinding: data.priorBinding,
+        });
       default: {
         // Exhaustiveness check — catches stale enqueues after a job-type
         // rename without silently dropping messages.

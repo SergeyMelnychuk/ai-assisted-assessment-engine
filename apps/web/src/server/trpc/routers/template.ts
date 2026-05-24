@@ -418,45 +418,6 @@ export const templateRouter = createRouter({
       return { ok: true };
     }),
 
-  /**
-   * Re-run the AI binding proposer when the previous attempt failed.
-   * Refuses when a binding already exists — that path would clobber
-   * human edits, and we'd rather force the user to delete the
-   * binding explicitly if they really want a fresh proposal.
-   */
-  reproposeBinding: protectedProcedure
-    .input(z.object({ id: z.string().cuid() }))
-    .mutation(async ({ ctx, input }) => {
-      await assertTemplateMutationAccess(ctx, input.id);
-      const row = await ctx.db.template.findUnique({
-        where: { id: input.id },
-        select: { bindingJson: true },
-      });
-      if (!row) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Template not found",
-        });
-      }
-      if (row.bindingJson) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message:
-            "Template already has a binding. Edit it directly instead.",
-        });
-      }
-      await enqueueProposeTemplateBinding(input.id);
-      await ctx.db.auditLog.create({
-        data: {
-          userId: ctx.session.user.id,
-          action: "TEMPLATE_BINDING_REPROPOSE_REQUESTED",
-          entityType: "Template",
-          entityId: input.id,
-          details: {},
-        },
-      });
-      return { ok: true };
-    }),
 
   approve: protectedProcedure
     .input(z.object({ id: z.string().cuid() }))
@@ -518,6 +479,123 @@ export const templateRouter = createRouter({
         },
       });
       return { ok: true };
+    }),
+
+  /**
+   * Re-trigger the AI binding proposer for an existing template,
+   * with optional reviewer feedback and an explicit fresh-start
+   * flag. Useful when:
+   *   - the auto-proposed binding missed slots, or
+   *   - the engine catalog grew since the binding was first authored
+   *     and the reviewer wants the AI to take advantage of new
+   *     fields (e.g. `risks[*].*` / `section.<key>`), or
+   *   - the binding was hand-edited and got corrupted past the point
+   *     where refining it would help.
+   *
+   * Modes:
+   *   - **Refine** (default — `fromScratch: false`): the existing
+   *     binding is handed to the AI as a starting point. Entries the
+   *     reviewer didn't flag survive; ones they call out get revisited.
+   *   - **From scratch** (`fromScratch: true`): the AI ignores the
+   *     existing binding entirely. The current binding is snapshotted
+   *     into the audit row so the reviewer can copy it back out if the
+   *     new one turns out worse.
+   *
+   * Approved templates flip back to PROPOSED so the new binding goes
+   * through a fresh human review before any future fill uses it.
+   * Past fills are unaffected — they snapshot the binding they used
+   * onto the `TemplateFill` row.
+   */
+  reproposeBinding: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        feedback: z.string().trim().max(4_000).optional(),
+        fromScratch: z.boolean().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertTemplateMutationAccess(ctx, input.id);
+      const row = await ctx.db.template.findUnique({
+        where: { id: input.id },
+        select: {
+          id: true,
+          name: true,
+          kind: true,
+          status: true,
+          engagementId: true,
+          storagePath: true,
+          bindingJson: true,
+        },
+      });
+      if (!row) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Template not found",
+        });
+      }
+      if (row.storagePath === "pending") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message:
+            "Template upload hasn't finished — wait until storage is ready before re-proposing.",
+        });
+      }
+
+      const fromScratch = input.fromScratch === true;
+      const priorBinding =
+        !fromScratch && row.bindingJson ? row.bindingJson : undefined;
+      const priorStatus = row.status;
+
+      // Audit row written FIRST — captures the prior binding so the
+      // reviewer can recover it from the log if the re-propose makes
+      // things worse. The job's own success audit row also lands later
+      // with diff counts + tokens.
+      await ctx.db.auditLog.create({
+        data: {
+          userId: ctx.session.user.id,
+          action: "TEMPLATE_BINDING_REPROPOSE_REQUESTED",
+          entityType: "Template",
+          entityId: row.id,
+          details: {
+            mode: fromScratch ? "fresh" : "refine",
+            priorStatus,
+            feedback: input.feedback ?? null,
+            // Snapshot the prior binding so it's recoverable from the
+            // audit log even when fromScratch=true (where the proposer
+            // won't see it). For refine mode the prior binding goes to
+            // the proposer too via the job payload below; we snapshot
+            // here regardless for a single source of truth.
+            priorBinding: row.bindingJson ?? null,
+          },
+        },
+      });
+
+      // Approved → Proposed so the new binding goes through a fresh
+      // human approval before any future fill uses it.
+      if (row.status === TemplateStatus.APPROVED) {
+        await ctx.db.template.update({
+          where: { id: row.id },
+          data: {
+            status: TemplateStatus.PROPOSED,
+            approvedById: null,
+            approvedAt: null,
+          },
+        });
+      }
+
+      const jobId = await enqueueProposeTemplateBinding(row.id, {
+        isRepropose: true,
+        feedback: input.feedback,
+        priorBinding,
+      });
+
+      return {
+        ok: true,
+        jobId,
+        mode: fromScratch ? "fresh" : "refine",
+        statusReset: priorStatus === TemplateStatus.APPROVED,
+      };
     }),
 
   deprecate: protectedProcedure

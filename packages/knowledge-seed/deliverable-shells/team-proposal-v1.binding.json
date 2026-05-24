@@ -1,7 +1,7 @@
 {
   "version": 1,
   "templateKind": "TEAM_PROPOSAL",
-  "notes": "Hand-authored workspace-default binding for the Team Proposal v1 docx. seed: {\"name\":\"Team Proposal\",\"version\":\"v1\",\"kind\":\"TEAM_PROPOSAL\"}. Per-role iteration choice: the engine's resolveEngineField() in engine-outputs.ts only matches the regex /^([\\w]+)\\[\\*\\]\\.(.+)$/ — it supports `roles[*].field` but NOT `roles[0].field`/`roles[1].field`/etc. So this docx exposes each per-role column as a single placeholder (one row per concept, not one row per role) and the docx filler joins the array with ', '. A row-per-role layout would require a real docx engine with table-row repetition (Slice 5+). The static line «Additional roles, if any, listed in appendix.» under the team table is intentionally not bound — there is no engine field for «+N more». Cap of 5 roles called for in the brief is enforced visually in the appendix narrative, not by the binding (the comma-joined list will simply include all roles the engine surfaces).",
+  "notes": "Hand-authored workspace-default binding for the Team Proposal v1 docx. seed: {\"name\":\"Team Proposal\",\"version\":\"v1\",\"kind\":\"TEAM_PROPOSAL\"}. The Proposed-team and Per-role-justification tables use `docx.tableRow` — the filler clones each template row once per role at fill time, substituting the per-row tokens with the role's values. Per-role hours/cost columns are deliberately absent — the engine doesn't compute them today (ADR-0018 deferred); only Count + Seniority + Phase + Responsibilities + Justification are real per-role fields. The engagement-totals table holds the rolled-up numbers separately.",
   "entries": [
     {
       "field": "project.name",
@@ -13,7 +13,7 @@
       "field": "engagement.clientName",
       "target": { "kind": "docx.placeholder", "token": "{{client_name}}" },
       "format": "auto",
-      "note": "Cover + running header > client name."
+      "note": "Cover > client name."
     },
     {
       "field": "engagement.name",
@@ -31,43 +31,43 @@
       "field": "totals.scenarioName",
       "target": { "kind": "docx.placeholder", "token": "{{scenario_name}}" },
       "format": "auto",
-      "note": "Engagement context > scenario."
+      "note": "Engagement totals > scenario name."
     },
     {
       "field": "totals.currency",
       "target": { "kind": "docx.placeholder", "token": "{{totals_currency}}" },
       "format": "auto",
-      "note": "Engagement context > currency code."
+      "note": "Engagement totals > currency code."
     },
     {
       "field": "totals.effortHoursLow",
       "target": { "kind": "docx.placeholder", "token": "{{totals_effort_low}}" },
       "format": "auto",
-      "note": "Engagement context > effort hours (low)."
+      "note": "Engagement totals > effort hours (low)."
     },
     {
       "field": "totals.effortHoursHigh",
       "target": { "kind": "docx.placeholder", "token": "{{totals_effort_high}}" },
       "format": "auto",
-      "note": "Engagement context > effort hours (high)."
+      "note": "Engagement totals > effort hours (high)."
     },
     {
       "field": "totals.costLow",
       "target": { "kind": "docx.placeholder", "token": "{{totals_cost_low}}" },
       "format": "currency",
-      "note": "Engagement context > cost (low)."
+      "note": "Engagement totals > cost (low)."
     },
     {
       "field": "totals.costHigh",
       "target": { "kind": "docx.placeholder", "token": "{{totals_cost_high}}" },
       "format": "currency",
-      "note": "Engagement context > cost (high)."
+      "note": "Engagement totals > cost (high)."
     },
     {
       "field": "totals.confidence",
       "target": { "kind": "docx.placeholder", "token": "{{totals_confidence}}" },
       "format": "percent",
-      "note": "Engagement context > confidence."
+      "note": "Engagement totals > confidence."
     },
     {
       "field": "totals.assumptions",
@@ -76,64 +76,59 @@
       "note": "Assumptions section > narrative paragraph."
     },
     {
-      "field": "roles[*].roleName",
-      "target": { "kind": "docx.placeholder", "token": "{{roles_role_names}}" },
-      "format": "auto",
-      "note": "Proposed team table > Roles row (comma-joined; see notes for rationale)."
-    },
-    {
-      "field": "roles[*].seniority",
-      "target": { "kind": "docx.placeholder", "token": "{{roles_seniorities}}" },
-      "format": "auto",
-      "note": "Proposed team table > Seniority row (comma-joined)."
-    },
-    {
-      "field": "roles[*].count",
-      "target": { "kind": "docx.placeholder", "token": "{{roles_counts}}" },
-      "format": "auto",
-      "note": "Proposed team table > Count row (comma-joined)."
-    },
-    {
-      "field": "roles[*].hoursLow",
-      "target": { "kind": "docx.placeholder", "token": "{{roles_hours_low}}" },
-      "format": "auto",
-      "note": "Proposed team table > Hours low row (comma-joined)."
-    },
-    {
-      "field": "roles[*].hoursHigh",
-      "target": { "kind": "docx.placeholder", "token": "{{roles_hours_high}}" },
-      "format": "auto",
-      "note": "Proposed team table > Hours high row (comma-joined)."
-    },
-    {
-      "field": "roles[*].costLow",
-      "target": { "kind": "docx.placeholder", "token": "{{roles_costs_low}}" },
-      "format": "auto",
-      "note": "Proposed team table > Cost low row (comma-joined; left as 'auto' rather than 'currency' because the format helper only handles single numbers, not joined strings)."
-    },
-    {
-      "field": "roles[*].costHigh",
-      "target": { "kind": "docx.placeholder", "token": "{{roles_costs_high}}" },
-      "format": "auto",
-      "note": "Proposed team table > Cost high row (comma-joined)."
-    },
-    {
-      "field": "roles[*].responsibilities",
-      "target": { "kind": "docx.placeholder", "token": "{{roles_responsibilities}}" },
-      "format": "auto",
-      "note": "Per-role responsibilities section (comma-joined narrative)."
-    },
-    {
-      "field": "roles[*].justification",
-      "target": { "kind": "docx.placeholder", "token": "{{roles_justifications}}" },
-      "format": "auto",
-      "note": "Per-role justification section (comma-joined narrative)."
-    },
-    {
       "field": "section.team_proposal_overview",
       "target": { "kind": "docx.placeholder", "token": "{{section_team_proposal_overview}}" },
       "format": "auto",
-      "note": "AI-written engagement-context narrative explaining why this team shape was chosen — sits above the role table. Replaces the previous static framing paragraph."
+      "note": "AI-written engagement-context narrative."
+    },
+    {
+      "field": "roles[*].roleName",
+      "target": { "kind": "docx.tableRow", "token": "{{role_name}}" },
+      "groupKey": "roles",
+      "format": "auto",
+      "note": "Proposed team table > Role column."
+    },
+    {
+      "field": "roles[*].seniority",
+      "target": { "kind": "docx.tableRow", "token": "{{role_seniority}}" },
+      "groupKey": "roles",
+      "format": "auto",
+      "note": "Proposed team table > Seniority column."
+    },
+    {
+      "field": "roles[*].count",
+      "target": { "kind": "docx.tableRow", "token": "{{role_count}}" },
+      "groupKey": "roles",
+      "format": "auto",
+      "note": "Proposed team table > Count column."
+    },
+    {
+      "field": "roles[*].phase",
+      "target": { "kind": "docx.tableRow", "token": "{{role_phase}}" },
+      "groupKey": "roles",
+      "format": "auto",
+      "note": "Proposed team table > Phase column (may be empty)."
+    },
+    {
+      "field": "roles[*].responsibilities",
+      "target": { "kind": "docx.tableRow", "token": "{{role_responsibilities}}" },
+      "groupKey": "roles",
+      "format": "auto",
+      "note": "Proposed team table > Responsibilities column."
+    },
+    {
+      "field": "roles[*].roleName",
+      "target": { "kind": "docx.tableRow", "token": "{{role_name_just}}" },
+      "groupKey": "roles_justification",
+      "format": "auto",
+      "note": "Per-role justification table > Role column (same role list as above; we re-bind under a distinct token because each table has its own template row)."
+    },
+    {
+      "field": "roles[*].justification",
+      "target": { "kind": "docx.tableRow", "token": "{{role_justification}}" },
+      "groupKey": "roles_justification",
+      "format": "auto",
+      "note": "Per-role justification table > Justification column."
     }
   ]
 }
