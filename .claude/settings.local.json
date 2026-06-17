@@ -80,7 +80,9 @@
       "Bash(chmod +x /tmp/task11-smoke.sh)",
       "Bash(bash /tmp/task11-smoke.sh)",
       "Bash(tee /tmp/task11-smoke.out)",
-      "Bash(cat > *)"
+      "Bash(cat > *)",
+      "Bash(git fetch *)",
+      "Bash(git rev-list *)"
     ]
   }
 }
