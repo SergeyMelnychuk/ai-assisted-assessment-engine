@@ -1,4 +1,9 @@
 copilot.planatechnologies.io {
-    encode gzip
+    encode gzip 
+    @icons path /favicon.ico /icon /icon.png /apple-icon /apple-icon.png /apple-touch-icon.png
+    respond @icons 204
     reverse_proxy web:3000
+    tls {
+        dns route53
+    }
 }
