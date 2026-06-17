@@ -103,7 +103,13 @@ export function ExportList({ assessmentId }: { assessmentId: string }) {
                   {d.deliverableType.replace(/_/g, " ").toLowerCase()}
                 </CardTitle>
                 <CardDescription>
-                  {d.templateId ? `Template: ${d.templateId} · ` : ""}
+                  {/* This is the engine's internal section-spec key (the
+                      house layout the DOCX/PDF export renders from), not
+                      the customer's uploaded template. Labelled "Layout"
+                      so it's never mistaken for the branded template —
+                      that one is the "populated template" download
+                      below. */}
+                  {d.layoutKey ? `Layout: ${d.layoutKey} · ` : ""}
                   Last updated{" "}
                   {new Date(d.updatedAt).toLocaleString(undefined, {
                     dateStyle: "medium",
@@ -125,16 +131,68 @@ export function ExportList({ assessmentId }: { assessmentId: string }) {
                 )}
               </div>
             </CardHeader>
-            {!d.canExportClean && d.hasAnyContent ? (
-              <CardContent>
+            <CardContent className="space-y-3">
+              {/* Branded customer-template fill. Distinct artifact from
+                  the engine DOCX/PDF above — this is the uploaded
+                  template populated with engine data + AI prose. Shown
+                  here so the Export page is the one place that offers
+                  both. */}
+              {d.populatedFill ? (
+                <div className="rounded-md border bg-muted/20 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">
+                        Populated template
+                      </div>
+                      <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                        {d.populatedFill.templateName}{" "}
+                        {d.populatedFill.templateVersion} ·{" "}
+                        {d.populatedFill.filename} ·{" "}
+                        {(d.populatedFill.fileSize / 1024).toFixed(0)} KB
+                      </div>
+                    </div>
+                    <a
+                      href={`/api/documents/${d.populatedFill.documentId}/download?download=1`}
+                      className="shrink-0 text-sm font-medium text-primary underline-offset-2 hover:underline"
+                    >
+                      Download
+                    </a>
+                  </div>
+                  {/* Fill-health — surface a no-op fill loudly instead
+                      of handing over a blank branded doc silently. */}
+                  {d.populatedFill.isEmpty ? (
+                    <p className="mt-2 rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-xs text-amber-800 dark:text-amber-300">
+                      ⚠ This template filled <strong>0 fields</strong> — it
+                      has no recognised <code>{"{{placeholders}}"}</code>.
+                      The download is effectively a blank copy. Add
+                      placeholder tokens to the template and re-approve it
+                      on the Templates tab.
+                    </p>
+                  ) : d.populatedFill.warnings.length > 0 ? (
+                    <p className="mt-2 rounded border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-xs text-amber-800 dark:text-amber-300">
+                      ⚠ Filled with {d.populatedFill.warnings.length} warning
+                      {d.populatedFill.warnings.length === 1 ? "" : "s"} —
+                      some fields didn&apos;t resolve. First:{" "}
+                      {d.populatedFill.warnings[0]}
+                    </p>
+                  ) : d.populatedFill.filledEntryCount !== null ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Filled {d.populatedFill.filledEntryCount} field
+                      {d.populatedFill.filledEntryCount === 1 ? "" : "s"}.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {!d.canExportClean && d.hasAnyContent ? (
                 <p className="text-xs text-muted-foreground">
                   Draft exports include every section, with a DRAFT
                   watermark on anything not yet approved. Approve every
                   section on the Deliverables tab to unlock a clean
                   export.
                 </p>
-              </CardContent>
-            ) : null}
+              ) : null}
+            </CardContent>
           </Card>
         );
       })}

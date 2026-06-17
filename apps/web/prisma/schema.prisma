@@ -379,9 +379,23 @@ model Evidence {
   // pgvector's column type, so reads/writes go through raw SQL.
   embedding     Unsupported("vector(1536)")?
   // ADR-0027: lexical search backbone. Stored generated column —
-  // Postgres maintains it from `content` automatically. Prisma can't
-  // type tsvector so reads/writes go through raw SQL in the retriever.
-  searchVec     Unsupported("tsvector")?    @map("search_vec")
+  // Postgres maintains it from `content` automatically (created in
+  // migration 20260512165717 via `GENERATED ALWAYS AS (...) STORED`).
+  // Prisma can't type tsvector so reads/writes go through raw SQL in
+  // the retriever.
+  //
+  // The `@default(dbgenerated(...))` + `@@index(type: Gin)` below are
+  // NOT cosmetic: they are exactly what `prisma db pull` introspects
+  // this column + index into. Without them, `prisma migrate dev`
+  // shadow-diffs the (generated, GIN-indexed) DB column against a
+  // plain schema column and emits spurious `ALTER COLUMN ... DROP
+  // DEFAULT` + `DROP INDEX` statements on every new migration. Keeping
+  // the schema's representation identical to introspection makes that
+  // diff empty. The expression string must match introspection's
+  // normalised form verbatim (regconfig cast, uppercase COALESCE,
+  // ::text cast) — re-derive with `prisma db pull` if Postgres ever
+  // rewrites it.
+  searchVec     Unsupported("tsvector")?    @map("search_vec") @default(dbgenerated("to_tsvector('english'::regconfig, COALESCE(content, ''::text))"))
   chunkIndex    Int?        @map("chunk_index")
   chunkSource   Json?       @map("chunk_source")
   contentSha    String?     @map("content_sha")
@@ -392,6 +406,7 @@ model Evidence {
   answer     Answer?    @relation(fields: [answerId], references: [id])
 
   @@index([contentSha])
+  @@index([searchVec], type: Gin)
   @@map("evidences")
 }
 
@@ -1105,6 +1120,16 @@ model TemplateFill {
   /// Subset of the engine outputs that drove this fill — kept for
   /// audit. Trimmed (no PII, no secrets) — see filler service.
   inputsSnapshot Json?    @map("inputs_snapshot")
+  /// How many binding entries the filler actually wrote into the
+  /// output. 0 means the template had no resolvable placeholders —
+  /// the produced file is effectively a blank copy. Surfaced on the
+  /// Export page so a no-op fill is never handed over silently.
+  /// Nullable for fills created before this column existed.
+  filledEntryCount Int?   @map("filled_entry_count")
+  /// Filler warnings (unresolved fields, missing sheets, "no
+  /// placeholders bound", …). Same array the filler returns; mirrored
+  /// here so the UI doesn't have to correlate against the audit log.
+  warnings      Json?    @map("warnings")
   filledAt      DateTime @default(now()) @map("filled_at")
   filledById    String?  @map("filled_by_id")
 

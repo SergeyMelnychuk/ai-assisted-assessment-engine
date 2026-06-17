@@ -1,9 +1,4 @@
-import {
-  Prisma,
-  type DeliverableType,
-  type PrismaClient,
-  type TemplateKind,
-} from "@prisma/client";
+import { Prisma, type PrismaClient, type TemplateKind } from "@prisma/client";
 import {
   buildStorageKey,
   getObjectBuffer,
@@ -12,39 +7,13 @@ import {
 import { fillTemplate } from "./filler";
 import { loadEngineOutputs } from "./engine-outputs";
 import { bindingDocumentSchema } from "./binding";
+// Pure mapper extracted to its own dependency-free module so callers
+// that only need it (e.g. the `export` tRPC router) don't transitively
+// pull in this file's heavy fill stack (exceljs + yauzl-promise →
+// native @node-rs/crc32). Re-exported below for back-compat.
+import { templateKindToDeliverableType } from "./template-kind-map";
 
-/**
- * Map a TemplateKind to the matching DeliverableType so the engine
- * outputs can include the latest deliverable's section bodies.
- *
- * Returns `null` for kinds that don't correspond to a deliverable
- * (ESTIMATION = the WBS xlsx, legacy generic kinds = anything goes,
- * we don't know the type from the kind alone). Callers pass the
- * mapped type — or `null` — through to `loadEngineOutputs`.
- */
-function templateKindToDeliverableType(
-  kind: TemplateKind,
-): DeliverableType | null {
-  switch (kind) {
-    case "EXECUTIVE_SUMMARY":
-    case "ASSESSMENT_REPORT":
-    case "RISK_REGISTER":
-    case "TARGET_STATE":
-    case "ROADMAP":
-    case "TEAM_PROPOSAL":
-    case "ESTIMATE":
-    case "ASSUMPTIONS_GAPS":
-    case "SOW_DRAFT":
-    case "GREENFIELD_DISCOVERY":
-      // 1:1 enum overlap between TemplateKind and DeliverableType for
-      // these per-deliverable kinds.
-      return kind as unknown as DeliverableType;
-    // ESTIMATION + legacy generic kinds — no single deliverable type
-    // to pin to. The fill still works; `outputs.section` is empty.
-    default:
-      return null;
-  }
-}
+export { templateKindToDeliverableType };
 
 /**
  * Pick the template a fill should use for the given assessment + kind.
@@ -334,6 +303,11 @@ export async function fillAndStoreForAssessment(
       // Only the engine sections that drove the fill — keeps the
       // snapshot bounded.
       inputsSnapshot: outputs as unknown as Prisma.InputJsonValue,
+      // Fill health — mirrored onto the row so the Export page can show
+      // "filled N fields" / "0 fields, no placeholders" without
+      // correlating against the TEMPLATE_FILLED audit row.
+      filledEntryCount: filled.filledEntryCount,
+      warnings: filled.warnings as unknown as Prisma.InputJsonValue,
       filledById: params.actingUserId ?? null,
     },
     select: { id: true },
