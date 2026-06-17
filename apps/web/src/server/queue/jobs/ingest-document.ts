@@ -157,8 +157,8 @@ export async function ingestDocumentJob(documentId: string): Promise<void> {
         data: {
           ingestStatus: "READY",
           processingStatus: "PROCESSED",
-          extractedText,
-          extractedSummary: summary,
+          extractedText: stripNullBytes(extractedText),
+          extractedSummary: stripNullBytes(summary),
           chunkCount: chunks.length,
         },
       });
